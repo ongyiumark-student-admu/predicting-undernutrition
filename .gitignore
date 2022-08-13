@@ -1,0 +1,7 @@
+archive
+materials
+thesisPU
+data
+
+**/\[WIP\]*.*
+**/.ipynb_checkpoints
