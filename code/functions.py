@@ -7,6 +7,7 @@ import tensorflow as tf
 PandasDataFrame = pd.DataFrame
 TensorflowDataset = tf.data.Dataset
 NumpyArrayPair = tuple[np.ndarray, np.ndarray]
+ModelMetrics = tuple[float, float, float, float]
 
 def df_to_dataset(dataframe: PandasDataFrame, label: str, shuffle: bool=True, batch_size: int=8) -> TensorflowDataset:
     """
@@ -41,3 +42,51 @@ def df_to_nparray(dataframe: PandasDataFrame, label: str) -> NumpyArrayPair:
     X = dataframe.drop(label, axis=1).to_numpy()
     y = dataframe[label].to_numpy()
     return (X, y)
+
+def train_nn(train : PandasDataFrame, test : PandasDataFrame, features : list[str], label : str, layers : list[int]) -> ModelMetrics:
+    """
+        Trains a dense neural network model with 'train' and evaluates the model on 'test'.
+
+        :param train: pandas dataframe of the training set
+        :param test: pandas dataframe of the testing set
+        :param features: list of features to include in training
+        :param label: name of the target column for supervised learning
+        :param layers: list of number of nodes per layer
+        :return (loss, accuracy, sensitivity, specificity): model evaluation metrics
+    """
+    # Generate feauture columns
+    feature_columns = []
+    for col in features:
+        feature_columns.append(tf.feature_column.numeric_column(col))
+
+    # Generating a tensorflow dataset
+    train_ds = df_to_dataset(train, label)
+    test_ds = df_to_dataset(test, label)
+
+    # Building the model
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.DenseFeatures(feature_columns))
+    for x in layers:
+        model.add(tf.keras.layers.Dense(x, activation='relu'))
+    model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+
+    # Compiling the model
+    model.compile(optimizer='adam',
+                  loss='binary_crossentropy',
+                  metrics=['accuracy',
+                           tf.keras.metrics.TruePositives(),
+                           tf.keras.metrics.TrueNegatives(),
+                           tf.keras.metrics.FalsePositives(),
+                           tf.keras.metrics.FalseNegatives()
+                          ])
+
+    # Training the Model
+    history = model.fit(train_ds, epochs=10, verbose=1)
+
+    # Evaluating the Model
+    scores = model.evaluate(test_ds, verbose=0)
+    loss, accuracy, tp, tn, fp, fn = scores
+    sensitivity = tp/(tp+fn)
+    specificity = tn/(tn+fp)
+    
+    return loss, accuracy, sensitivity, specificity
