@@ -1,7 +1,10 @@
 # Importing libraries
+import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from sklearn.model_selection import StratifiedKFold
+from typing import Callable
 
 # Creating aliases
 PandasDataFrame = pd.DataFrame
@@ -43,7 +46,7 @@ def df_to_nparray(dataframe: PandasDataFrame, label: str) -> NumpyArrayPair:
     y = dataframe[label].to_numpy()
     return (X, y)
 
-def train_nn(train : PandasDataFrame, test : PandasDataFrame, features : list[str], label : str, layers : list[int]) -> ModelMetrics:
+def train_nn(train : PandasDataFrame, test : PandasDataFrame, label : str, features : list[str], layers : list[int]) -> ModelMetrics:
     """
         Trains a dense neural network model with 'train' and evaluates the model on 'test'.
 
@@ -90,3 +93,54 @@ def train_nn(train : PandasDataFrame, test : PandasDataFrame, features : list[st
     specificity = tn/(tn+fp)
     
     return loss, accuracy, sensitivity, specificity
+
+def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, train_func : Callable, **kwargs) -> dict:
+    """
+        Validates a model with stratified k-fold cross validation.
+
+        :param train_set: pandas dataframe of the training set
+        :param label: name of the target column for supervised learning
+        :param num_fold: number of folds
+        :param train_func: training function of the model being validated
+        :param **kwargs: other keyword arguments for the training function
+        :return metrics: dictionary of metrics including 'ACCURACY', 'SENSITIVITY', and 'SPECIFICITY'.
+    """
+
+    # Arrays for metrics
+    acc_per_fold = []
+    loss_per_fold = []
+    sens_per_fold = []
+    spec_per_fold = []
+    
+    # Build K folds
+    kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
+    for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
+        train = train_set.iloc[train_idx] 
+        test = train_set.iloc[val_idx]
+
+        # Train model
+        loss, accuracy, sensitivity, specificity = train_func(train, test, label, **kwargs)
+        
+        loss_per_fold.append(loss)
+        acc_per_fold.append(accuracy)
+        sens_per_fold.append(sensitivity)
+        spec_per_fold.append(specificity)
+    
+    metrics = {
+        'ACCURACY': {
+            'ALL': acc_per_fold,
+            'MEAN': np.mean(acc_per_fold),
+            'STDEV': np.std(acc_per_fold)
+        },
+        'SENSITIVITY': {
+            'ALL': sens_per_fold,
+            'MEAN': np.mean(sens_per_fold),
+            'STDEV': np.std(sens_per_fold)
+        },
+        'SPECIFICITY': {
+            'ALL': spec_per_fold,
+            'MEAN': np.mean(spec_per_fold),
+            'STDEV': np.std(spec_per_fold)
+        }
+    }
+    return metrics
