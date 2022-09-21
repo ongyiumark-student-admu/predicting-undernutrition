@@ -113,7 +113,7 @@ def train_dnn(train : PandasDataFrame, test : PandasDataFrame, label : str, feat
 
 def train_naive_hive(train : PandasDataFrame, test : PandasDataFrame, label : str, num_hive : int, train_network : Callable, **kwargs) -> np.ndarray:
     """
-        Trains a random hive by naively training neural networks of the same architechture on the whole training set.
+        Trains a random hive by naively training neural networks of the same architecture on the whole training set.
 
         :param train: pandas dataframe of the training set
         :param test: pandas dataframe of the testing set
@@ -123,7 +123,7 @@ def train_naive_hive(train : PandasDataFrame, test : PandasDataFrame, label : st
         :param **kwargs: other keyword arguments for the training function
         :return predicted: numpy array of class predictions
     """
-    
+
     # Training networks
     ballots = []
     for x in range(num_hive):
