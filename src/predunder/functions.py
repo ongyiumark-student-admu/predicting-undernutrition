@@ -1,32 +1,35 @@
 # Importing libraries
-import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import imblearn as imb
 from sklearn.model_selection import StratifiedKFold
-from typing import Callable
 
-# Creating aliases
-PandasDataFrame = pd.DataFrame
-TensorflowDataset = tf.data.Dataset
-NumpyArrayPair = tuple[np.ndarray, np.ndarray]
+from typing import Callable
+from typing import Any
+import numpy.typing as npt
+
+# Defining Aliases
+PandasDataFrame = pd.core.frame.DataFrame
+TensorflowDataset = Any
+FeatureLabelPair = tuple[npt.NDArray[np.float64], npt.NDArray[np.unicode_]]
 ModelMetrics = tuple[float, float, float]
 
-def df_to_dataset(dataframe: PandasDataFrame, label: str, shuffle: bool=True, batch_size: int=8) -> TensorflowDataset:
+
+def df_to_dataset(dataframe: PandasDataFrame, label: str, shuffle: bool = True, batch_size: int = 8) -> TensorflowDataset:
     """
         Creates a Tensorflow Dataset from a Pandas DataFrame.
-        
+
         :param dataframe: pandas dataframe to be converted
         :param label: name of the target column for supervised learning
         :param shuffle: shuffles the dataset
         :param batch_size: batch size of the dataset
-        :return tfdataset: tensorflow dataset based on the dataframe 
+        :return tfdataset: tensorflow dataset based on the dataframe
     """
     dataframe = dataframe.copy()
-    dataframe['target'] = np.where(dataframe[label]=='INCREASED RISK', 1, 0)
+    dataframe['target'] = np.where(dataframe[label] == 'INCREASED RISK', 1, 0)
     dataframe = dataframe.drop(columns=label)
-    
+
     dataframe = dataframe.copy()
     labels = dataframe.pop('target')
     tfdataset = tf.data.Dataset.from_tensor_slices((dict(dataframe), labels))
@@ -35,36 +38,39 @@ def df_to_dataset(dataframe: PandasDataFrame, label: str, shuffle: bool=True, ba
         tfdataset = tfdataset.batch(batch_size)
     return tfdataset
 
-def df_to_nparray(dataframe: PandasDataFrame, label: str) -> NumpyArrayPair:
+
+def df_to_nparray(dataframe: PandasDataFrame, label: str) -> FeatureLabelPair:
     """
         Converts the Pandas DataFrame into features and labels in the form of numpy arrays.
-        
+
         :param dataframe: pandas dataframe to be converted
         :param label: name of the target column for supervised learning
-        :return (X, y): features and labels for supervised learning 
+        :return (X, y): features and labels for supervised learning
     """
     X = dataframe.drop(label, axis=1).to_numpy()
     y = dataframe[label].to_numpy()
     return (X, y)
 
-def get_metrics(predicted: np.ndarray, actual: np.ndarray) -> ModelMetrics:
+
+def get_metrics(predicted: npt.NDArray[np.int64], actual: npt.NDArray[np.int64]) -> ModelMetrics:
     """
         Extracts metrics from predictions.
 
         :param predicted: numpy array of predictions
         :param actual: numpy array of ground truth
         :return (accuracy, sensitivity, specificity): model evaluation metrics
-    """ 
-    tp = np.sum((predicted==1)&(actual==1))
-    tn = np.sum((predicted==0)&(actual==0))
-    fp = np.sum((predicted==1)&(actual==0))
-    fn = np.sum((predicted==0)&(actual==1))
+    """
+    tp = np.sum((predicted == 1) & (actual == 1))
+    tn = np.sum((predicted == 0) & (actual == 0))
+    fp = np.sum((predicted == 1) & (actual == 0))
+    fn = np.sum((predicted == 0) & (actual == 1))
 
     accuracy = (tp+tn)/(tp+tn+fp+fn)
     sensitivity = tp/(tp+fn)
     specificity = tn/(tn+fp)
 
     return accuracy, sensitivity, specificity
+
 
 def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
     """
@@ -74,15 +80,16 @@ def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
         :param label: name of the target column for supervised learning
         :return train: pandas dataframe of training set with oversampled data
     """
-    x_train = train_set.drop([label], axis = 1)
+    x_train = train_set.drop([label], axis=1)
     y_train = train_set[[label]]
     smt = imb.over_sampling.SMOTE()
     x_train_res, y_train_res = smt.fit_resample(x_train, y_train)
     train = pd.merge(x_train_res, y_train_res, left_index=True, right_index=True)
-    
+
     return train
 
-def train_dnn(train : PandasDataFrame, test : PandasDataFrame, label : str, features : list[str], layers : list[int]) -> np.ndarray:
+
+def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, features: list[str], layers: list[int]) -> npt.NDArray[np.int64]:
     """
         Trains a dense neural network model with 'train' and evaluates the model on 'test'.
 
@@ -117,10 +124,11 @@ def train_dnn(train : PandasDataFrame, test : PandasDataFrame, label : str, feat
                            tf.keras.metrics.TrueNegatives(),
                            tf.keras.metrics.FalsePositives(),
                            tf.keras.metrics.FalseNegatives()
-                          ])
+                           ]
+                  )
 
     # Training the Model
-    history = model.fit(train_ds, epochs=10, verbose=1)
+    model.fit(train_ds, epochs=10, verbose=1)
 
     # Getting predictions
     output = np.asarray([x[0] for x in model.predict(test_ds)])
@@ -128,7 +136,8 @@ def train_dnn(train : PandasDataFrame, test : PandasDataFrame, label : str, feat
 
     return predicted
 
-def train_naive_hive(train : PandasDataFrame, test : PandasDataFrame, label : str, num_hive : int, train_network : Callable, **kwargs) -> np.ndarray:
+
+def train_naive_hive(train: PandasDataFrame, test: PandasDataFrame, label: str, num_hive: int, train_network: Callable, **kwargs) -> npt.NDArray[np.int64]:
     """
         Trains a random hive by naively training neural networks of the same architecture on the whole training set.
 
@@ -145,7 +154,7 @@ def train_naive_hive(train : PandasDataFrame, test : PandasDataFrame, label : st
     ballots = []
     for x in range(num_hive):
         print(f"Training network {x+1}...")
-        ballots.append(train_network(train,test,label,**kwargs))
+        ballots.append(train_network(train, test, label, **kwargs))
         print(f"Network {x+1} completed.")
 
     # Counting votes
@@ -156,7 +165,8 @@ def train_naive_hive(train : PandasDataFrame, test : PandasDataFrame, label : st
 
     return np.asarray(predicted)
 
-def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, to_smote: bool, train_func : Callable, **kwargs) -> dict:
+
+def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, to_smote: bool, train_func: Callable, **kwargs) -> dict:
     """
         Validates a model with stratified k-fold cross validation.
 
@@ -173,22 +183,23 @@ def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, to_smote
     acc_per_fold = []
     sens_per_fold = []
     spec_per_fold = []
-    
+
     # Build K folds
     kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
     for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
         train = train_set.iloc[train_idx]
-        if to_smote: train = smote_data(train, label)
+        if to_smote:
+            train = smote_data(train, label)
         test = train_set.iloc[val_idx]
 
         # Train model
         predicted = train_func(train, test, label, **kwargs)
         accuracy, sensitivity, specificity = get_metrics(predicted, np.where(test[label].values == "INCREASED RISK", 1, 0))
-        
+
         acc_per_fold.append(accuracy)
         sens_per_fold.append(sensitivity)
         spec_per_fold.append(specificity)
-    
+
     metrics = {
         'ACCURACY': {
             'ALL': acc_per_fold,
