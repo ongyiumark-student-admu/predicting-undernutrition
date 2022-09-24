@@ -140,6 +140,21 @@ def train_naive_hive(train : PandasDataFrame, test : PandasDataFrame, label : st
 
     return np.asarray(predicted)
 
+def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
+    """
+        (Tent) Performs basic SMOTE minority oversampling over the training set within a cross fold.
+
+        :param train_set: pandas dataframe of the training set within the cross fold
+        :param label: name of the target column for supervised learning
+    """
+    x_train = train_set.drop([label], axis = 1)
+    y_train = train_set[[label]]
+    smt = imb.over_sampling.SMOTE()
+    x_train_res, y_train_res = smt.fit_resample(x_train, y_train)
+    train = pd.merge(x_train_res, y_train_res, left_index=True, right_index=True)
+    
+    return train
+
 def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, to_smote: bool, train_func : Callable, **kwargs) -> dict:
     """
         Validates a model with stratified k-fold cross validation.
@@ -163,11 +178,7 @@ def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, to_smote
     for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
         train = train_set.iloc[train_idx]
         if to_smote:
-            x_train = train.drop([label, "idx"], axis = 1)
-            y_train = train[[label]]
-            smt = imb.over_sampling.SMOTE()
-            x_train_res, y_train_res = smt.fit_resample(x_train, y_train)
-            train = pd.merge(x_train_res, y_train_res, left_index=True, right_index=True)
+            train = smote_data(train, label)
         test = train_set.iloc[val_idx]
 
         # Train model
