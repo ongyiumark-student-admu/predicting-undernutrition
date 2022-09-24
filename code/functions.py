@@ -10,7 +10,7 @@ from typing import Callable
 PandasDataFrame = pd.DataFrame
 TensorflowDataset = tf.data.Dataset
 NumpyArrayPair = tuple[np.ndarray, np.ndarray]
-ModelMetrics = tuple[float, float, float, float]
+ModelMetrics = tuple[float, float, float]
 
 def df_to_dataset(dataframe: PandasDataFrame, label: str, shuffle: bool=True, batch_size: int=8) -> TensorflowDataset:
     """
@@ -46,16 +46,35 @@ def df_to_nparray(dataframe: PandasDataFrame, label: str) -> NumpyArrayPair:
     y = dataframe[label].to_numpy()
     return (X, y)
 
-def train_nn(train : PandasDataFrame, test : PandasDataFrame, label : str, features : list[str], layers : list[int]) -> ModelMetrics:
+def get_metrics(predicted: np.ndarray, actual: np.ndarray) -> ModelMetrics:
+    """
+        Extracts metrics from predictions.
+
+        :param predicted: numpy array of predictions
+        :param actual: numpy array of ground truth
+        :return (accuracy, sensitivity, specificity): model evaluation metrics
+    """ 
+    tp = np.sum((predicted==1)&(actual==1))
+    tn = np.sum((predicted==0)&(actual==0))
+    fp = np.sum((predicted==1)&(actual==0))
+    fn = np.sum((predicted==0)&(actual==1))
+
+    accuracy = (tp+tn)/(tp+tn+fp+fn)
+    sensitivity = tp/(tp+fn)
+    specificity = tn/(tn+fp)
+
+    return accuracy, sensitivity, specificity
+
+def train_dnn(train : PandasDataFrame, test : PandasDataFrame, label : str, features : list[str], layers : list[int]) -> np.ndarray:
     """
         Trains a dense neural network model with 'train' and evaluates the model on 'test'.
 
         :param train: pandas dataframe of the training set
         :param test: pandas dataframe of the testing set
-        :param features: list of features to include in training
         :param label: name of the target column for supervised learning
+        :param features: list of features to include in training
         :param layers: list of number of nodes per layer
-        :return (loss, accuracy, sensitivity, specificity): model evaluation metrics
+        :return predicted: numpy array of class predictions
     """
     # Generate feauture columns
     feature_columns = []
@@ -86,13 +105,39 @@ def train_nn(train : PandasDataFrame, test : PandasDataFrame, label : str, featu
     # Training the Model
     history = model.fit(train_ds, epochs=10, verbose=1)
 
-    # Evaluating the Model
-    scores = model.evaluate(test_ds, verbose=0)
-    loss, accuracy, tp, tn, fp, fn = scores
-    sensitivity = tp/(tp+fn)
-    specificity = tn/(tn+fp)
-    
-    return loss, accuracy, sensitivity, specificity
+    # Getting predictions
+    output = np.asarray([x[0] for x in model.predict(test_ds)])
+    predicted = np.where(output >= 0.5, 1, 0)
+
+    return predicted
+
+def train_naive_hive(train : PandasDataFrame, test : PandasDataFrame, label : str, num_hive : int, train_network : Callable, **kwargs) -> np.ndarray:
+    """
+        Trains a random hive by naively training neural networks of the same architecture on the whole training set.
+
+        :param train: pandas dataframe of the training set
+        :param test: pandas dataframe of the testing set
+        :param label: name of the target column for supervised learning
+        :param num_hive: number of networks in the hive
+        :param train_network: training function for each network
+        :param **kwargs: other keyword arguments for the training function
+        :return predicted: numpy array of class predictions
+    """
+
+    # Training networks
+    ballots = []
+    for x in range(num_hive):
+        print(f"Training network {x+1}...")
+        ballots.append(train_network(train,test,label,**kwargs))
+        print(f"Network {x+1} completed.")
+
+    # Counting votes
+    predicted = []
+    for p in zip(*ballots):
+        votes = sum(p)
+        predicted.append(1 if 2*votes >= num_hive else 0)
+
+    return np.asarray(predicted)
 
 def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, train_func : Callable, **kwargs) -> dict:
     """
@@ -108,7 +153,6 @@ def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, train_fu
 
     # Arrays for metrics
     acc_per_fold = []
-    loss_per_fold = []
     sens_per_fold = []
     spec_per_fold = []
     
@@ -119,9 +163,9 @@ def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, train_fu
         test = train_set.iloc[val_idx]
 
         # Train model
-        loss, accuracy, sensitivity, specificity = train_func(train, test, label, **kwargs)
+        predicted = train_func(train, test, label, **kwargs)
+        accuracy, sensitivity, specificity = get_metrics(predicted, np.where(test[label].values == "INCREASED RISK", 1, 0))
         
-        loss_per_fold.append(loss)
         acc_per_fold.append(accuracy)
         sens_per_fold.append(sensitivity)
         spec_per_fold.append(specificity)
