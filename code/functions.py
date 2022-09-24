@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import imblearn as imb
 from sklearn.model_selection import StratifiedKFold
 from typing import Callable
 
@@ -64,6 +65,22 @@ def get_metrics(predicted: np.ndarray, actual: np.ndarray) -> ModelMetrics:
     specificity = tn/(tn+fp)
 
     return accuracy, sensitivity, specificity
+
+def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
+    """
+        (Tent) Performs basic SMOTE minority oversampling over the training set within a cross fold.
+
+        :param train_set: pandas dataframe of the training set
+        :param label: name of the target column for supervised learning
+        :return train: pandas dataframe of training set with oversampled data
+    """
+    x_train = train_set.drop([label], axis = 1)
+    y_train = train_set[[label]]
+    smt = imb.over_sampling.SMOTE()
+    x_train_res, y_train_res = smt.fit_resample(x_train, y_train)
+    train = pd.merge(x_train_res, y_train_res, left_index=True, right_index=True)
+    
+    return train
 
 def train_dnn(train : PandasDataFrame, test : PandasDataFrame, label : str, features : list[str], layers : list[int]) -> np.ndarray:
     """
@@ -139,13 +156,14 @@ def train_naive_hive(train : PandasDataFrame, test : PandasDataFrame, label : st
 
     return np.asarray(predicted)
 
-def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, train_func : Callable, **kwargs) -> dict:
+def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, to_smote: bool, train_func : Callable, **kwargs) -> dict:
     """
         Validates a model with stratified k-fold cross validation.
 
         :param train_set: pandas dataframe of the training set
         :param label: name of the target column for supervised learning
         :param num_fold: number of folds
+        :param to_smote: flag for applying oversampling with SMOTE
         :param train_func: training function of the model being validated
         :param **kwargs: other keyword arguments for the training function
         :return metrics: dictionary of metrics including 'ACCURACY', 'SENSITIVITY', and 'SPECIFICITY'.
@@ -159,7 +177,8 @@ def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, train_fu
     # Build K folds
     kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
     for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
-        train = train_set.iloc[train_idx] 
+        train = train_set.iloc[train_idx]
+        if to_smote: train = smote_data(train, label)
         test = train_set.iloc[val_idx]
 
         # Train model
