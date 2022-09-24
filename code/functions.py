@@ -66,6 +66,22 @@ def get_metrics(predicted: np.ndarray, actual: np.ndarray) -> ModelMetrics:
 
     return accuracy, sensitivity, specificity
 
+def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
+    """
+        (Tent) Performs basic SMOTE minority oversampling over the training set within a cross fold.
+
+        :param train_set: pandas dataframe of the training set
+        :param label: name of the target column for supervised learning
+        :return train: pandas dataframe of training set with oversampled data
+    """
+    x_train = train_set.drop([label], axis = 1)
+    y_train = train_set[[label]]
+    smt = imb.over_sampling.SMOTE()
+    x_train_res, y_train_res = smt.fit_resample(x_train, y_train)
+    train = pd.merge(x_train_res, y_train_res, left_index=True, right_index=True)
+    
+    return train
+
 def train_dnn(train : PandasDataFrame, test : PandasDataFrame, label : str, features : list[str], layers : list[int]) -> np.ndarray:
     """
         Trains a dense neural network model with 'train' and evaluates the model on 'test'.
@@ -162,12 +178,7 @@ def train_kfold(train_set: PandasDataFrame, label: str, num_fold : int, to_smote
     kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
     for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
         train = train_set.iloc[train_idx]
-        if to_smote:
-            x_train = train.drop([label, "idx"], axis = 1)
-            y_train = train[[label]]
-            smt = imb.over_sampling.SMOTE()
-            x_train_res, y_train_res = smt.fit_resample(x_train, y_train)
-            train = pd.merge(x_train_res, y_train_res, left_index=True, right_index=True)
+        if to_smote: train = smote_data(train, label)
         test = train_set.iloc[val_idx]
 
         # Train model
