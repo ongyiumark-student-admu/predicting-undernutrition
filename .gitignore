@@ -6,6 +6,3 @@ submissions
 **/\[WIP\]*.*
 **/.ipynb_checkpoints
 **/__pycache__
-*_cache
-.tox
-.coverage
