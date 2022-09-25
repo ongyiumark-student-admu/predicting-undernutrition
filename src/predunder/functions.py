@@ -72,6 +72,21 @@ def get_metrics(predicted: npt.NDArray[np.int64], actual: npt.NDArray[np.int64])
     return accuracy, sensitivity, specificity
 
 
+def kfold_metrics_to_df(metrics: dict) -> PandasDataFrame:
+    """
+        Converts k-fold metrics to a pandas dataframe for analysis.
+
+        :param metrics: dictionary of metrics
+        :return dfrow: a pandas dataframe with a single row
+    """
+
+    dfrow = pd.DataFrame()
+    for metric, vals in metrics.items():
+        for key, val in vals.items():
+            dfrow[f"{metric}_{key}"] = [val]
+    return dfrow
+
+
 def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
     """
         (Tent) Performs basic SMOTE minority oversampling over the training set within a cross fold.

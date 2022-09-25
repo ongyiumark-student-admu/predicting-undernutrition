@@ -41,3 +41,9 @@ def test_train_kfold(df_sample):
 def test_train_kfold_smote(df_sample):
     df, label = df_sample
     puf.train_kfold(df, label, 2, puf.train_dnn, True, features=df.drop([label], axis=1).columns, layers=[6])
+
+
+def test_kfold_metrics_to_df(df_sample):
+    df, label = df_sample
+    metrics = puf.train_kfold(df, label, 2, puf.train_dnn, True, features=df.drop([label], axis=1).columns, layers=[6])
+    puf.kfold_metrics_to_df(metrics)
