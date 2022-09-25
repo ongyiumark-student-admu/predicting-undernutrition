@@ -9,3 +9,4 @@ submissions
 *_cache
 .tox
 .coverage
+src/predunder.egg-info

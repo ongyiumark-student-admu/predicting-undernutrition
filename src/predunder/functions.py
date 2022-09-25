@@ -1,11 +1,11 @@
 # Importing libraries
+import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import imblearn as imb
-from sklearn.model_selection import StratifiedKFold
+from PIL import Image, ImageDraw
 
-from typing import Callable
 from typing import Any
 import numpy.typing as npt
 
@@ -52,6 +52,78 @@ def df_to_nparray(dataframe: PandasDataFrame, label: str) -> FeatureLabelPair:
     return (X, y)
 
 
+def df_to_image(dataframe: PandasDataFrame, label: str, img_size: tuple[int, int], outdir: str) -> None:
+    """
+        Converts tabular data into images.
+
+        :param dataframe: pandas dataframe to convert into image
+        :param label: name of the target column for supervised learning
+        :param img_size: dimensions of the resulting image
+        :param outdir: directory where the images will be stored
+    """
+
+    def sigmoid(x):
+        return 1/(1+np.exp(-x))
+
+    features = dataframe.drop([label], axis=1).columns.tolist()
+
+    # Normalize variables
+    normalize = ['IDD_SCORE', 'AGE', 'HHID_count', 'HH_AGE', 'FOOD_EXPENSE_WEEKLY',
+                 'NON-FOOD_EXPENSE_WEEKLY', 'HDD_SCORE', 'FOOD_INSECURITY', 'YoungBoys', 'YoungGirls',
+                 'AverageMonthlyIncome', 'FOOD_EXPENSE_WEEKLY_pc', 'NON-FOOD_EXPENSE_WEEKLY_pc',
+                 'AverageMonthlyIncome_pc'
+                 ]
+
+    df_normal = dataframe.copy()
+    for col in normalize:
+        df_normal[col] = sigmoid((df_normal[col]-df_normal[col].mean())/df_normal[col].std())
+
+    df_normal['BEN_4PS'] = df_normal['BEN_4PS']-1
+    df_normal['label'] = np.where(df_normal['2aii'] == "INCREASED RISK", 1, 0)
+
+    # Generate images
+    n = len(features)
+    w, h = img_size
+    nw = n//4
+    nh = (n+nw-1)//nw
+
+    for index, row in df_normal.iterrows():
+        img = Image.new("RGB", img_size)
+        for i in range(0, nh):
+            for j in range(0, nw):
+                idx = i*nw+j
+                if idx >= n:
+                    break
+                val = int(sigmoid(row[features[idx]])*255)
+
+                r = ImageDraw.Draw(img)
+                x = i*(h//nh)
+                y = j*(w//nw)
+                r.rectangle([(y, x), (y+w//nw, x+h//nh)], fill=(val, val, val))
+
+        subdir = os.path.join(outdir, str(row['label']))
+        if not os.path.exists(subdir):
+            os.makedirs(subdir)
+        img.save(os.path.join(subdir, f'{index}.png'))
+
+
+def image_to_dataset(dir: str, img_size: tuple[int, int]) -> TensorflowDataset:
+    """
+        Creates a Image Tensorflow Dataset from a directory.
+
+        :param dir: directory of the images
+        :param img_size: dimensions of the images
+        :return dataset: tensorflow dataset based on the images
+    """
+
+    dataset = tf.keras.utils.image_dataset_from_directory(
+        dir,
+        shuffle=True,
+        batch_size=8,
+        image_size=img_size)
+    return dataset
+
+
 def get_metrics(predicted: npt.NDArray[np.int64], actual: npt.NDArray[np.int64]) -> ModelMetrics:
     """
         Extracts metrics from predictions.
@@ -72,9 +144,24 @@ def get_metrics(predicted: npt.NDArray[np.int64], actual: npt.NDArray[np.int64])
     return accuracy, sensitivity, specificity
 
 
+def kfold_metrics_to_df(metrics: dict) -> PandasDataFrame:
+    """
+        Converts k-fold metrics to a pandas dataframe for analysis.
+
+        :param metrics: dictionary of metrics
+        :return dfrow: a pandas dataframe with a single row
+    """
+
+    dfrow = pd.DataFrame()
+    for metric, vals in metrics.items():
+        for key, val in vals.items():
+            dfrow[f"{metric}_{key}"] = [val]
+    return dfrow
+
+
 def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
     """
-        (Tent) Performs basic SMOTE minority oversampling over the training set within a cross fold.
+        Performs basic SMOTE over the training set.
 
         :param train_set: pandas dataframe of the training set
         :param label: name of the target column for supervised learning
@@ -87,134 +174,3 @@ def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
     train = pd.merge(x_train_sm, y_train_sm, left_index=True, right_index=True)
 
     return train
-
-
-def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, features: list[str], layers: list[int]) -> npt.NDArray[np.int64]:
-    """
-        Trains a dense neural network model with 'train' and evaluates the model on 'test'.
-
-        :param train: pandas dataframe of the training set
-        :param test: pandas dataframe of the testing set
-        :param label: name of the target column for supervised learning
-        :param features: list of features to include in training
-        :param layers: list of number of nodes per layer
-        :return predicted: numpy array of class predictions
-    """
-    # Generate feauture columns
-    feature_columns = []
-    for col in features:
-        feature_columns.append(tf.feature_column.numeric_column(col))
-
-    # Generating a tensorflow dataset
-    train_ds = df_to_dataset(train, label)
-    test_ds = df_to_dataset(test, label)
-
-    # Building the model
-    model = tf.keras.Sequential()
-    model.add(tf.keras.layers.DenseFeatures(feature_columns))
-    for x in layers:
-        model.add(tf.keras.layers.Dense(x, activation='relu'))
-    model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
-
-    # Compiling the model
-    model.compile(optimizer='adam',
-                  loss='binary_crossentropy',
-                  metrics=['accuracy',
-                           tf.keras.metrics.TruePositives(),
-                           tf.keras.metrics.TrueNegatives(),
-                           tf.keras.metrics.FalsePositives(),
-                           tf.keras.metrics.FalseNegatives()
-                           ]
-                  )
-
-    # Training the Model
-    model.fit(train_ds, epochs=10, verbose=1)
-
-    # Getting predictions
-    output = np.asarray([x[0] for x in model.predict(test_ds)])
-    predicted = np.where(output >= 0.5, 1, 0)
-
-    return predicted
-
-
-def train_naive_hive(train: PandasDataFrame, test: PandasDataFrame, label: str, num_hive: int, train_network: Callable, **kwargs) -> npt.NDArray[np.int64]:
-    """
-        Trains a random hive by naively training neural networks of the same architecture on the whole training set.
-
-        :param train: pandas dataframe of the training set
-        :param test: pandas dataframe of the testing set
-        :param label: name of the target column for supervised learning
-        :param num_hive: number of networks in the hive
-        :param train_network: training function for each network
-        :param **kwargs: other keyword arguments for the training function
-        :return predicted: numpy array of class predictions
-    """
-
-    # Training networks
-    ballots = []
-    for x in range(num_hive):
-        print(f"Training network {x+1}...")
-        ballots.append(train_network(train, test, label, **kwargs))
-        print(f"Network {x+1} completed.")
-
-    # Counting votes
-    predicted = []
-    for p in zip(*ballots):
-        votes = sum(p)
-        predicted.append(1 if 2*votes >= num_hive else 0)
-
-    return np.asarray(predicted)
-
-
-def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, train_func: Callable, to_smote: bool = False, **kwargs) -> dict:
-    """
-        Validates a model with stratified k-fold cross validation.
-
-        :param train_set: pandas dataframe of the training set
-        :param label: name of the target column for supervised learning
-        :param num_fold: number of folds
-        :param train_func: training function of the model being validated
-        :param to_smote: flag for applying oversampling with SMOTE
-        :param **kwargs: other keyword arguments for the training function
-        :return metrics: dictionary of metrics including 'ACCURACY', 'SENSITIVITY', and 'SPECIFICITY'.
-    """
-
-    # Arrays for metrics
-    acc_per_fold = []
-    sens_per_fold = []
-    spec_per_fold = []
-
-    # Build K folds
-    kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
-    for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
-        train = train_set.iloc[train_idx]
-        if to_smote:
-            train = smote_data(train, label)
-        test = train_set.iloc[val_idx]
-
-        # Train model
-        predicted = train_func(train, test, label, **kwargs)
-        accuracy, sensitivity, specificity = get_metrics(predicted, np.where(test[label].values == "INCREASED RISK", 1, 0))
-
-        acc_per_fold.append(accuracy)
-        sens_per_fold.append(sensitivity)
-        spec_per_fold.append(specificity)
-
-    metrics = {
-        'ACCURACY': {
-            'ALL': acc_per_fold,
-            'MEAN': np.mean(acc_per_fold),
-            'STDEV': np.std(acc_per_fold)
-        },
-        'SENSITIVITY': {
-            'ALL': sens_per_fold,
-            'MEAN': np.mean(sens_per_fold),
-            'STDEV': np.std(sens_per_fold)
-        },
-        'SPECIFICITY': {
-            'ALL': spec_per_fold,
-            'MEAN': np.mean(spec_per_fold),
-            'STDEV': np.std(spec_per_fold)
-        }
-    }
-    return metrics
