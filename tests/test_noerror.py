@@ -1,6 +1,9 @@
 import numpy as np
+import os
+from shutil import rmtree
 
-from predunder.functions import df_to_dataset, df_to_nparray, get_metrics, smote_data, kfold_metrics_to_df
+from predunder.functions import df_to_dataset, df_to_nparray, df_to_image, image_to_dataset, \
+    get_metrics, smote_data, kfold_metrics_to_df
 from predunder.training import train_dnn, train_naive_hive, train_kfold
 
 
@@ -12,6 +15,27 @@ def test_df_to_dataset(df_sample):
 def test_df_to_nparray(df_sample):
     df, label = df_sample
     df_to_nparray(df, label)
+
+
+def test_df_to_image(df_sample):
+    df, label = df_sample
+    dir = "image-data/basic-sample"
+    img_size = (160, 160)
+    if os.path.exists(dir):
+        rmtree(dir)
+
+    df_to_image(df, label, img_size, dir)
+
+
+def test_image_to_dataset(df_sample):
+    df, label = df_sample
+    dir = "image-data/basic-sample"
+    if os.path.exists(dir):
+        rmtree(dir)
+    img_size = (160, 160)
+
+    df_to_image(df, label, img_size, dir)
+    image_to_dataset(dir, img_size)
 
 
 def test_get_metrics():
