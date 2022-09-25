@@ -1,8 +1,10 @@
 # Importing libraries
+import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import imblearn as imb
+from PIL import Image, ImageDraw
 
 from typing import Any
 import numpy.typing as npt
@@ -48,6 +50,78 @@ def df_to_nparray(dataframe: PandasDataFrame, label: str) -> FeatureLabelPair:
     X = dataframe.drop(label, axis=1).to_numpy()
     y = dataframe[label].to_numpy()
     return (X, y)
+
+
+def df_to_image(dataframe: PandasDataFrame, label: str, img_size: tuple[int, int], outdir: str) -> None:
+    """
+        Converts tabular data into images.
+
+        :param dataframe: pandas dataframe to convert into image
+        :param label: name of the target column for supervised learning
+        :param img_size: dimensions of the resulting image
+        :param outdir: directory where the images will be stored
+    """
+
+    def sigmoid(x):
+        return 1/(1+np.exp(-x))
+
+    features = dataframe.drop([label], axis=1).columns.tolist()
+
+    # Normalize variables
+    normalize = ['IDD_SCORE', 'AGE', 'HHID_count', 'HH_AGE', 'FOOD_EXPENSE_WEEKLY',
+                 'NON-FOOD_EXPENSE_WEEKLY', 'HDD_SCORE', 'FOOD_INSECURITY', 'YoungBoys', 'YoungGirls',
+                 'AverageMonthlyIncome', 'FOOD_EXPENSE_WEEKLY_pc', 'NON-FOOD_EXPENSE_WEEKLY_pc',
+                 'AverageMonthlyIncome_pc'
+                 ]
+
+    df_normal = dataframe.copy()
+    for col in normalize:
+        df_normal[col] = sigmoid((df_normal[col]-df_normal[col].mean())/df_normal[col].std())
+
+    df_normal['BEN_4PS'] = df_normal['BEN_4PS']-1
+    df_normal['label'] = np.where(df_normal['2aii'] == "INCREASED RISK", 1, 0)
+
+    # Generate images
+    n = len(features)
+    w, h = img_size
+    nw = n//4
+    nh = (n+nw-1)//nw
+
+    for index, row in df_normal.iterrows():
+        img = Image.new("RGB", img_size)
+        for i in range(0, nh):
+            for j in range(0, nw):
+                idx = i*nw+j
+                if idx >= n:
+                    break
+                val = int(sigmoid(row[features[idx]])*255)
+
+                r = ImageDraw.Draw(img)
+                x = i*(h//nh)
+                y = j*(w//nw)
+                r.rectangle([(y, x), (y+w//nw, x+h//nh)], fill=(val, val, val))
+
+        subdir = os.path.join(outdir, str(row['label']))
+        if not os.path.exists(subdir):
+            os.makedirs(subdir)
+        img.save(os.path.join(subdir, f'{index}.png'))
+
+
+def image_to_dataset(dir: str, img_size: tuple[int, int]) -> TensorflowDataset:
+    """
+        Creates a Image Tensorflow Dataset from a directory.
+
+        :param dir: directory of the images
+        :param img_size: dimensions of the images
+        :return dataset: tensorflow dataset based on the images
+    """
+
+    dataset = tf.keras.utils.image_dataset_from_directory(
+        dir,
+        shuffle=True,
+        batch_size=8,
+        image_size=img_size)
+    return dataset
 
 
 def get_metrics(predicted: npt.NDArray[np.int64], actual: npt.NDArray[np.int64]) -> ModelMetrics:
