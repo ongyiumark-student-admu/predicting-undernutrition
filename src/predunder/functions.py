@@ -83,8 +83,8 @@ def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
     x_train = train_set.drop([label], axis=1)
     y_train = train_set[[label]]
     smt = imb.over_sampling.SMOTE()
-    x_train_res, y_train_res = smt.fit_resample(x_train, y_train)
-    train = pd.merge(x_train_res, y_train_res, left_index=True, right_index=True)
+    x_train_sm, y_train_sm = smt.fit_resample(x_train, y_train)
+    train = pd.merge(x_train_sm, y_train_sm, left_index=True, right_index=True)
 
     return train
 
@@ -166,15 +166,15 @@ def train_naive_hive(train: PandasDataFrame, test: PandasDataFrame, label: str, 
     return np.asarray(predicted)
 
 
-def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, to_smote: bool, train_func: Callable, **kwargs) -> dict:
+def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, train_func: Callable, to_smote: bool = False, **kwargs) -> dict:
     """
         Validates a model with stratified k-fold cross validation.
 
         :param train_set: pandas dataframe of the training set
         :param label: name of the target column for supervised learning
         :param num_fold: number of folds
-        :param to_smote: flag for applying oversampling with SMOTE
         :param train_func: training function of the model being validated
+        :param to_smote: flag for applying oversampling with SMOTE
         :param **kwargs: other keyword arguments for the training function
         :return metrics: dictionary of metrics including 'ACCURACY', 'SENSITIVITY', and 'SPECIFICITY'.
     """
