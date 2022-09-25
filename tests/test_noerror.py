@@ -5,6 +5,7 @@ from shutil import rmtree
 from predunder.functions import df_to_dataset, df_to_nparray, df_to_image, image_to_dataset, \
     get_metrics, smote_data, kfold_metrics_to_df
 from predunder.training import train_dnn, train_naive_hive, train_kfold
+from predunder.hypertuning import tune_dnn
 
 
 def test_df_to_dataset(df_sample):
@@ -73,3 +74,13 @@ def test_kfold_metrics_to_df(df_sample):
     df, label = df_sample
     metrics = train_kfold(df, label, 2, train_dnn, True, features=df.drop([label], axis=1).columns, layers=[6])
     kfold_metrics_to_df(metrics)
+
+
+def test_tune_dnn(df_sample):
+    df, label = df_sample
+    tune_dnn(df, label, 2, 1, False)
+
+
+def test_tune_dnn_smote(df_sample):
+    df, label = df_sample
+    tune_dnn(df, label, 2, 1, True)
