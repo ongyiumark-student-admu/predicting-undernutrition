@@ -87,7 +87,7 @@ def kfold_metrics_to_df(metrics: dict) -> PandasDataFrame:
 
 def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
     """
-        (Tent) Performs basic SMOTE minority oversampling over the training set within a cross fold.
+        Performs basic SMOTE over the training set.
 
         :param train_set: pandas dataframe of the training set
         :param label: name of the target column for supervised learning
