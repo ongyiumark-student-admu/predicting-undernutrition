@@ -1,6 +1,10 @@
-import predunder.functions as puf
+# Importing libraries
 import pandas as pd
 
+from predunder.training import train_dnn, train_kfold
+from predunder.functions import kfold_metrics_to_df
+
+# Defining Aliases
 PandasDataFrame = pd.core.frame.DataFrame
 
 
@@ -14,21 +18,22 @@ def tune_dnn(train: PandasDataFrame, label: str, folds: int, to_smote: bool) -> 
         :return results: pandas dataframe of results
     """
     results = pd.DataFrame()
-    features = train.drop([label], axis=1).columns
+    features = train.drop(
+        [label], axis=1).columns
     n = len(features)
 
     for i in range(1, n+1):
         print("Training", [i])
-        metrics = puf.train_kfold(train, label, folds, puf.train_dnn, to_smote, features=features, layers=[i])
-        rowdf = puf.kfold_metrics_to_df(metrics)
+        metrics = train_kfold(train, label, folds, train_dnn, to_smote, features=features, layers=[i])
+        rowdf = kfold_metrics_to_df(metrics)
         rowdf['LAYERS'] = [[i]]
         results = pd.concat([results, rowdf])
 
     for i in range(1, n+1):
         for j in range(1, n+1):
             print("Training", [i, j])
-            metrics = puf.train_kfold(train, label, folds, puf.train_dnn, to_smote, features=features, layers=[i, j])
-            rowdf = puf.kfold_metrics_to_df(metrics)
+            metrics = train_kfold(train, label, folds, train_dnn, to_smote, features=features, layers=[i, j])
+            rowdf = kfold_metrics_to_df(metrics)
             rowdf['LAYERS'] = [[i, j]]
             results = pd.concat([results, rowdf])
 
