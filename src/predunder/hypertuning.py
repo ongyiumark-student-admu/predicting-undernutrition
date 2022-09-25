@@ -8,7 +8,7 @@ from predunder.functions import kfold_metrics_to_df
 PandasDataFrame = pd.core.frame.DataFrame
 
 
-def tune_dnn(train: PandasDataFrame, label: str, folds: int, max_nodes: int, to_smote: bool) -> PandasDataFrame:
+def tune_dnn(train: PandasDataFrame, label: str, folds: int, max_nodes: int, oversample: str = "none") -> PandasDataFrame:
     """
         Perfoms k-fold cross validation on dense neural networks with varying layers.
 
@@ -16,7 +16,7 @@ def tune_dnn(train: PandasDataFrame, label: str, folds: int, max_nodes: int, to_
         :param label: name of the target column for supervised learning
         :param fold: number of folds for k-fold cross-validation
         :param max_nodes: maximum number of nodes per layer
-        :param to_smote: flag for applying oversampling with SMOTE
+        :param oversample: oversampling algorithm to be applied
         :return results: pandas dataframe of results
     """
     results = pd.DataFrame()
@@ -25,7 +25,7 @@ def tune_dnn(train: PandasDataFrame, label: str, folds: int, max_nodes: int, to_
 
     for i in range(1, max_nodes+1):
         print("Training", [i])
-        metrics = train_kfold(train, label, folds, train_dnn, to_smote, features=features, layers=[i])
+        metrics = train_kfold(train, label, folds, train_dnn, features=features, layers=[i], oversample=oversample)
         rowdf = kfold_metrics_to_df(metrics)
         rowdf['LAYERS'] = [[i]]
         results = pd.concat([results, rowdf])
@@ -33,7 +33,7 @@ def tune_dnn(train: PandasDataFrame, label: str, folds: int, max_nodes: int, to_
     for i in range(1, max_nodes+1):
         for j in range(1, max_nodes+1):
             print("Training", [i, j])
-            metrics = train_kfold(train, label, folds, train_dnn, to_smote, features=features, layers=[i, j])
+            metrics = train_kfold(train, label, folds, train_dnn, features=features, layers=[i, j], oversample=oversample)
             rowdf = kfold_metrics_to_df(metrics)
             rowdf['LAYERS'] = [[i, j]]
             results = pd.concat([results, rowdf])

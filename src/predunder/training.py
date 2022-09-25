@@ -6,13 +6,14 @@ from sklearn.model_selection import StratifiedKFold
 
 from typing import Callable
 import numpy.typing as npt
-from predunder.functions import df_to_dataset, smote_data, get_metrics
+from predunder.functions import df_to_dataset, oversample_data, get_metrics
 
 # Defining Aliases
 PandasDataFrame = pd.core.frame.DataFrame
 
 
-def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, features: list[str], layers: list[int]) -> npt.NDArray[np.int64]:
+def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, features: list[str], layers: list[int],
+              oversample: str = "none") -> npt.NDArray[np.int64]:
     """
         Trains a dense neural network model with 'train' and evaluates the model on 'test'.
 
@@ -21,12 +22,16 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
         :param label: name of the target column for supervised learning
         :param features: list of features to include in training
         :param layers: list of number of nodes per layer
+        :param oversample: oversampling algorithm to be applied
         :return predicted: numpy array of class predictions
     """
     # Generate feauture columns
     feature_columns = []
     for col in features:
         feature_columns.append(tf.feature_column.numeric_column(col))
+
+    # Oversampling the training set
+    train = oversample_data(train, label, oversample)
 
     # Generating a tensorflow dataset
     train_ds = df_to_dataset(train, label)
@@ -89,7 +94,7 @@ def train_naive_hive(train: PandasDataFrame, test: PandasDataFrame, label: str, 
     return np.asarray(predicted)
 
 
-def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, train_func: Callable, to_smote: bool = False, **kwargs) -> dict:
+def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, train_func: Callable, **kwargs) -> dict:
     """
         Validates a model with stratified k-fold cross validation.
 
@@ -111,8 +116,6 @@ def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, train_fun
     kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
     for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
         train = train_set.iloc[train_idx]
-        if to_smote:
-            train = smote_data(train, label)
         test = train_set.iloc[val_idx]
 
         # Train model
