@@ -164,7 +164,7 @@ def oversample_data(train_set: PandasDataFrame, label: str, oversample: str = "n
         Performs oversampling over the minority class using the specific technique.
         :param train_set: pandas dataframe of the training set
         :param label: name of the target column for supervised learning
-        :param oversample_func: oversampling algorithm to be applied
+        :param oversample: oversampling algorithm to be applied
         :return train: pandas dataframe of training set with oversampled data
     """
 
