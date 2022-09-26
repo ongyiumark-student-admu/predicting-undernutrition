@@ -159,18 +159,31 @@ def kfold_metrics_to_df(metrics: dict) -> PandasDataFrame:
     return dfrow
 
 
-def smote_data(train_set: PandasDataFrame, label: str) -> PandasDataFrame:
+def oversample_data(train_set: PandasDataFrame, label: str, oversample: str = "none") -> PandasDataFrame:
     """
-        Performs basic SMOTE over the training set.
-
+        Performs oversampling over the minority class using the specific technique.
         :param train_set: pandas dataframe of the training set
         :param label: name of the target column for supervised learning
+        :param oversample: oversampling algorithm to be applied
         :return train: pandas dataframe of training set with oversampled data
     """
+
+    # Returns origin train set if no oversampling is specified
+    if oversample == "none":
+        return train_set
+
+    # Separating dataset into features and labels
     x_train = train_set.drop([label], axis=1)
     y_train = train_set[[label]]
-    smt = imb.over_sampling.SMOTE()
-    x_train_sm, y_train_sm = smt.fit_resample(x_train, y_train)
-    train = pd.merge(x_train_sm, y_train_sm, left_index=True, right_index=True)
+
+    # Applying specified oversampling techinque
+    if oversample == "smote":
+        ovs = imb.over_sampling.SMOTE()
+    elif oversample == "adasyn":
+        ovs = imb.over_sampling.ADASYN()
+    elif oversample == "borderline":
+        ovs = imb.over_sampling.BorderlineSMOTE()
+    x_train, y_train = ovs.fit_resample(x_train, y_train)
+    train = pd.merge(x_train, y_train, left_index=True, right_index=True)
 
     return train
