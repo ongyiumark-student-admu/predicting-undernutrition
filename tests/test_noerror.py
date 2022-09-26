@@ -25,7 +25,8 @@ def test_df_to_image(df_sample):
     if os.path.exists(dir):
         rmtree(dir)
 
-    df_to_image(df, label, img_size, dir)
+    featuredf = df.drop([label], axis=1)
+    df_to_image(df, featuredf.mean(), featuredf.std(), label, img_size, dir)
 
 
 def test_image_to_dataset(df_sample):
@@ -35,7 +36,8 @@ def test_image_to_dataset(df_sample):
         rmtree(dir)
     img_size = (160, 160)
 
-    df_to_image(df, label, img_size, dir)
+    featuredf = df.drop([label], axis=1)
+    df_to_image(df, featuredf.mean(), featuredf.std(), label, img_size, dir)
     image_to_dataset(dir, img_size)
 
 
