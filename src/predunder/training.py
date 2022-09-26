@@ -26,9 +26,9 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
         :return predicted: numpy array of class predictions
     """
     # Generate feauture columns
-    feature_columns = []
+    all_inputs = []
     for col in features:
-        feature_columns.append(tf.feature_column.numeric_column(col))
+        all_inputs.append(tf.keras.Input(shape=(1,), name=col))
 
     # Oversampling the training set
     train = oversample_data(train, label, oversample)
@@ -38,11 +38,12 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
     test_ds = df_to_dataset(test, label)
 
     # Building the model
-    model = tf.keras.Sequential()
-    model.add(tf.keras.layers.DenseFeatures(feature_columns))
-    for x in layers:
-        model.add(tf.keras.layers.Dense(x, activation='relu'))
-    model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+    all_features = tf.keras.layers.concatenate(all_inputs)
+    x = tf.keras.layers.Dense(layers[0], activation="relu")(all_features)
+    for nodes in layers:
+        x = tf.keras.layers.Dense(nodes, activation='relu')(x)
+    output = tf.keras.layers.Dense(1, activation='sigmoid')(x)
+    model = tf.keras.Model(all_inputs, output)
 
     # Compiling the model
     model.compile(optimizer='adam',
