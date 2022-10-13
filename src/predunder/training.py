@@ -49,7 +49,7 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
 
     # Compiling the model
     model.compile(optimizer='adam',
-                  loss='binary_crossentropy',
+                  loss=tf.keras.losses.BinaryCrossentropy(),
                   metrics=['accuracy',
                            tf.keras.metrics.TruePositives(),
                            tf.keras.metrics.TrueNegatives(),
@@ -59,7 +59,8 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
                   )
 
     # Training the Model
-    model.fit(train_ds, epochs=10, verbose=1)
+    es = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+    model.fit(train_ds, epochs=20, callbacks=[es], verbose=1)
 
     # Getting predictions
     output = np.asarray([x[0] for x in model.predict(test_ds)])
@@ -83,16 +84,26 @@ def train_naive_hive(train: PandasDataFrame, test: PandasDataFrame, label: str, 
 
     # Training networks
     ballots = []
+    ballot_weights = []
     for x in range(num_hive):
         print(f"Training network {x+1}...")
-        ballots.append(train_network(train, test, label, **kwargs))
+        preds = train_network(train, test, label, **kwargs)
+        sensitivity, specificity = get_metrics(preds, np.where(test[label].values == 'INCREASED RISK', 1, 0))[1:]
+        weights = [sensitivity if p == 0 else specificity for p in preds]
+        ballots.append(preds)
+        ballot_weights.append(weights)
         print(f"Network {x+1} completed.")
 
-    # Counting votes
+    # Counting votes with smart voting
     predicted = []
-    for p in zip(*ballots):
-        votes = sum(p)
-        predicted.append(1 if 2*votes >= num_hive else 0)
+    for p, w in zip(zip(*ballots), zip(*ballot_weights)):
+        cnt0, cnt1 = (0, 0)
+        for vote, weight in zip(p, w):
+            if vote == 0:
+                cnt0 += 1-(weight <= 0.2)
+            else:
+                cnt1 += 1-(weight <= 0.2)
+        predicted.append(1 if cnt1 >= cnt0 else 0)
 
     return np.asarray(predicted)
 
@@ -163,9 +174,12 @@ def train_images(train: PandasDataFrame, test: PandasDataFrame, label: str, conv
                            tf.keras.metrics.TruePositives(),
                            tf.keras.metrics.TrueNegatives(),
                            tf.keras.metrics.FalsePositives(),
-                           tf.keras.metrics.FalseNegatives()])
+                           tf.keras.metrics.FalseNegatives()],
+                  )
 
-    model.fit(train_ds, epochs=10, verbose=1)
+    # Training the Model
+    es = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+    model.fit(train_ds, epochs=20, callbacks=[es], verbose=1)
 
     # Getting predictions
     output = np.asarray([x[0] for x in model.predict(test_ds)])

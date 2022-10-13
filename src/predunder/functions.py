@@ -82,13 +82,13 @@ def df_to_image(dataframe: PandasDataFrame, meandf: PandasDataFrame, stddf: Pand
         df_normal[col] = sigmoid((df_normal[col]-meandf[col])/stddf[col])
 
     df_normal['CHILD_SEX'] = df_normal['CHILD_SEX']/1
-    df_normal['IDD_SCORE'] = df_normal['IDD_SCORE']/15
-    df_normal['HDD_SCORE'] = df_normal['HDD_SCORE']/15
-    df_normal['FOOD_INSECURITY'] = df_normal['FOOD_INSECURITY']/27
+    df_normal['IDD_SCORE'] = df_normal['IDD_SCORE']/12
+    df_normal['HDD_SCORE'] = df_normal['HDD_SCORE']/12
+    df_normal['FOOD_INSECURITY'] = (df_normal['FOOD_INSECURITY']-1)/3
     df_normal['BEN_4PS'] = df_normal['BEN_4PS']/2
     df_normal['AREA_TYPE'] = df_normal['AREA_TYPE']/1
 
-    df_normal['label'] = np.where(df_normal['2aii'] == "INCREASED RISK", 1, 0)
+    df_normal['label'] = np.where(df_normal[label] == "INCREASED RISK", 1, 0)
 
     # Generate images
     n = len(features)
@@ -128,7 +128,7 @@ def image_to_dataset(dir: str, img_size: tuple[int, int]) -> TensorflowDataset:
     dataset = tf.keras.utils.image_dataset_from_directory(
         dir,
         shuffle=True,
-        batch_size=8,
+        batch_size=32,
         image_size=img_size)
     return dataset
 
