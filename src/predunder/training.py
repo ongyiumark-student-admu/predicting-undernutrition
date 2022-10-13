@@ -1,4 +1,6 @@
 # Importing libraries
+import os
+import shutil
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -6,7 +8,7 @@ from sklearn.model_selection import StratifiedKFold
 
 from typing import Callable
 import numpy.typing as npt
-from predunder.functions import df_to_dataset, oversample_data, get_metrics
+from predunder.functions import df_to_dataset, image_to_dataset, oversample_data, get_metrics
 
 # Defining Aliases
 PandasDataFrame = pd.core.frame.DataFrame
@@ -47,7 +49,7 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
 
     # Compiling the model
     model.compile(optimizer='adam',
-                  loss='binary_crossentropy',
+                  loss=tf.keras.losses.BinaryCrossentropy(),
                   metrics=['accuracy',
                            tf.keras.metrics.TruePositives(),
                            tf.keras.metrics.TrueNegatives(),
@@ -57,7 +59,8 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
                   )
 
     # Training the Model
-    model.fit(train_ds, epochs=10, verbose=1)
+    es = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+    model.fit(train_ds, epochs=20, callbacks=[es], verbose=1)
 
     # Getting predictions
     output = np.asarray([x[0] for x in model.predict(test_ds)])
@@ -81,18 +84,112 @@ def train_naive_hive(train: PandasDataFrame, test: PandasDataFrame, label: str, 
 
     # Training networks
     ballots = []
+    ballot_weights = []
     for x in range(num_hive):
         print(f"Training network {x+1}...")
-        ballots.append(train_network(train, test, label, **kwargs))
+        preds = train_network(train, test, label, **kwargs)
+        sensitivity, specificity = get_metrics(preds, np.where(test[label].values == 'INCREASED RISK', 1, 0))[1:]
+        weights = [sensitivity if p == 0 else specificity for p in preds]
+        ballots.append(preds)
+        ballot_weights.append(weights)
         print(f"Network {x+1} completed.")
 
-    # Counting votes
+    # Counting votes with smart voting
     predicted = []
-    for p in zip(*ballots):
-        votes = sum(p)
-        predicted.append(1 if 2*votes >= num_hive else 0)
+    for p, w in zip(zip(*ballots), zip(*ballot_weights)):
+        cnt0, cnt1 = (0, 0)
+        for vote, weight in zip(p, w):
+            if vote == 0:
+                cnt0 += 1-(weight <= 0.2)
+            else:
+                cnt1 += 1-(weight <= 0.2)
+        predicted.append(1 if cnt1 >= cnt0 else 0)
 
     return np.asarray(predicted)
+
+
+def train_images(train: PandasDataFrame, test: PandasDataFrame, label: str, convert_func: Callable, img_size: tuple[int, int],
+                 tmpdir: str, oversample: str = "none", base_model: str = "mobilenetv2", learning_rate: float = 0.0001) -> npt.NDArray[np.int64]:
+    """
+        Converts tabular data into images and trains with transfer learning.
+
+        :param train: pandas dataframe of the training set
+        :param test: pandas dataframe of the testing set
+        :param label: name of the target column for supervised learning
+        :param convert_func: table to image converter function
+        :param img_size: dimensions of the resulting images
+        :param tmpdir: directory where the images will be temporarily stored
+        :param base_model: base model for transfer learning
+        :param learning_rate: learning rate for the neural network
+        :return predicted: numpy array of class predictions
+    """
+    # Deleting directory if exists
+    if os.path.exists(tmpdir):
+        shutil.rmtree(tmpdir)
+
+    featuredf = train.drop([label], axis=1)
+    # Oversampling the training set
+    train = oversample_data(train, label, oversample)
+
+    # Generating images
+    convert_func(train, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmpdir, 'train'))
+    convert_func(test, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmpdir, 'test'))
+
+    # Generating tensorflow dataset
+    train_ds = image_to_dataset(os.path.join(tmpdir, 'train'), img_size)
+    test_ds = image_to_dataset(os.path.join(tmpdir, 'test'), img_size)
+
+    AUTOTUNE = tf.data.AUTOTUNE
+    train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
+    test_ds = test_ds.prefetch(buffer_size=AUTOTUNE)
+
+    # Building the model
+    img_shape = img_size+(3,)
+    if base_model == 'xception':
+        bm = tf.keras.applications.Xception(input_shape=img_shape, include_top=False, weights='imagenet')
+        preprocess = tf.keras.applications.xception.preprocess_input
+    elif base_model == 'resnet50v2':
+        bm = tf.keras.applications.ResNet50V2(input_shape=img_shape, include_top=False, weights='imagenet')
+        preprocess = tf.keras.applications.resnet_v2.preprocess_input
+    elif base_model == 'mobilenetv2':
+        bm = tf.keras.applications.MobileNetV2(input_shape=img_shape, include_top=False, weights='imagenet')
+        preprocess = tf.keras.applications.mobilenet_v2.preprocess_input
+    elif base_model == 'efficientnetv2s':
+        bm = tf.keras.applications.EfficientNetV2S(input_shape=img_shape, include_top=False, weights='imagenet')
+        preprocess = tf.keras.applications.efficientnet_v2.preprocess_input
+
+    inputs = tf.keras.Input(shape=img_shape)
+    x = preprocess(inputs)
+    x = bm(x, training=False)
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    x = tf.keras.layers.Dropout(0.2)(x)
+    output = tf.keras.layers.Dense(1, activation='sigmoid')(x)
+
+    model = tf.keras.Model(inputs, output)
+
+    # Compiling the model
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
+                  loss=tf.keras.losses.BinaryCrossentropy(),
+                  metrics=['accuracy',
+                           tf.keras.metrics.TruePositives(),
+                           tf.keras.metrics.TrueNegatives(),
+                           tf.keras.metrics.FalsePositives(),
+                           tf.keras.metrics.FalseNegatives()],
+                  )
+
+    # Training the Model
+    es = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+    model.fit(train_ds, epochs=20, callbacks=[es], verbose=1)
+
+    # Getting predictions
+    output = np.asarray([x[0] for x in model.predict(test_ds)])
+    predicted = np.where(output >= 0.5, 1, 0)
+
+    # Deleting temporary image folder
+    if os.path.exists(tmpdir):
+        shutil.rmtree(tmpdir)
+
+    return predicted
 
 
 def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, train_func: Callable, **kwargs) -> dict:

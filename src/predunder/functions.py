@@ -52,11 +52,14 @@ def df_to_nparray(dataframe: PandasDataFrame, label: str) -> FeatureLabelPair:
     return (X, y)
 
 
-def df_to_image(dataframe: PandasDataFrame, label: str, img_size: tuple[int, int], outdir: str) -> None:
+def df_to_image(dataframe: PandasDataFrame, meandf: PandasDataFrame, stddf: PandasDataFrame,
+                label: str, img_size: tuple[int, int], outdir: str) -> None:
     """
         Converts tabular data into images.
 
         :param dataframe: pandas dataframe to convert into image
+        :param meandf: pandas dataframe of means for normalization
+        :param stdevdf: pandas dataframe of standard deviations for normalization
         :param label: name of the target column for supervised learning
         :param img_size: dimensions of the resulting image
         :param outdir: directory where the images will be stored
@@ -68,18 +71,24 @@ def df_to_image(dataframe: PandasDataFrame, label: str, img_size: tuple[int, int
     features = dataframe.drop([label], axis=1).columns.tolist()
 
     # Normalize variables
-    normalize = ['IDD_SCORE', 'AGE', 'HHID_count', 'HH_AGE', 'FOOD_EXPENSE_WEEKLY',
-                 'NON-FOOD_EXPENSE_WEEKLY', 'HDD_SCORE', 'FOOD_INSECURITY', 'YoungBoys', 'YoungGirls',
+    normalize = ['AGE', 'HHID_count', 'HH_AGE', 'FOOD_EXPENSE_WEEKLY',
+                 'NON-FOOD_EXPENSE_WEEKLY', 'YoungBoys', 'YoungGirls',
                  'AverageMonthlyIncome', 'FOOD_EXPENSE_WEEKLY_pc', 'NON-FOOD_EXPENSE_WEEKLY_pc',
                  'AverageMonthlyIncome_pc'
                  ]
 
     df_normal = dataframe.copy()
     for col in normalize:
-        df_normal[col] = sigmoid((df_normal[col]-df_normal[col].mean())/df_normal[col].std())
+        df_normal[col] = sigmoid((df_normal[col]-meandf[col])/stddf[col])
 
-    df_normal['BEN_4PS'] = df_normal['BEN_4PS']-1
-    df_normal['label'] = np.where(df_normal['2aii'] == "INCREASED RISK", 1, 0)
+    df_normal['CHILD_SEX'] = df_normal['CHILD_SEX']/1
+    df_normal['IDD_SCORE'] = df_normal['IDD_SCORE']/12
+    df_normal['HDD_SCORE'] = df_normal['HDD_SCORE']/12
+    df_normal['FOOD_INSECURITY'] = (df_normal['FOOD_INSECURITY']-1)/3
+    df_normal['BEN_4PS'] = df_normal['BEN_4PS']/2
+    df_normal['AREA_TYPE'] = df_normal['AREA_TYPE']/1
+
+    df_normal['label'] = np.where(df_normal[label] == "INCREASED RISK", 1, 0)
 
     # Generate images
     n = len(features)
@@ -119,7 +128,7 @@ def image_to_dataset(dir: str, img_size: tuple[int, int]) -> TensorflowDataset:
     dataset = tf.keras.utils.image_dataset_from_directory(
         dir,
         shuffle=True,
-        batch_size=8,
+        batch_size=32,
         image_size=img_size)
     return dataset
 
