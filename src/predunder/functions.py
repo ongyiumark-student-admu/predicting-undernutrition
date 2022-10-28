@@ -1,30 +1,29 @@
 # Importing libraries
 import os
+
+import imblearn as imb
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import imblearn as imb
 from PIL import Image, ImageDraw
 
-from typing import Any
-import numpy.typing as npt
 
-# Defining Aliases
-PandasDataFrame = pd.core.frame.DataFrame
-TensorflowDataset = Any
-FeatureLabelPair = tuple[npt.NDArray[np.float64], npt.NDArray[np.unicode_]]
-ModelMetrics = tuple[float, float, float]
+def df_to_dataset(dataframe, label, shuffle=True, batch_size=8):
+    """Convert a Pandas DataFrame into a Tensorflow Dataset.
 
+    :param dataframe: DataFrame to be converted
+    :type dataframe: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param shuffle: shuffles the dataset
+    :type shuffle: bool, optional
+    :param batch_size: batch size of the dataset
+    :type batch_size: int, optional
+    :returns: Tensorflow Dataset based on the DataFrame
+    :rtype: tensorflow.data.Dataset
 
-def df_to_dataset(dataframe: PandasDataFrame, label: str, shuffle: bool = True, batch_size: int = 8) -> TensorflowDataset:
-    """
-        Creates a Tensorflow Dataset from a Pandas DataFrame.
-
-        :param dataframe: pandas dataframe to be converted
-        :param label: name of the target column for supervised learning
-        :param shuffle: shuffles the dataset
-        :param batch_size: batch size of the dataset
-        :return tfdataset: tensorflow dataset based on the dataframe
+    .. note:: The dataframe is required to have this as one of its columns.
+    .. todo:: The function implicitly assumes that the label column only has values "INCREASED RISK" or "REDUCED RISK".
     """
     dataframe = dataframe.copy()
     dataframe['target'] = np.where(dataframe[label] == 'INCREASED RISK', 1, 0)
@@ -35,34 +34,44 @@ def df_to_dataset(dataframe: PandasDataFrame, label: str, shuffle: bool = True, 
     tfdataset = tf.data.Dataset.from_tensor_slices((dict(dataframe), labels))
     if shuffle:
         tfdataset = tfdataset.shuffle(buffer_size=len(dataframe))
-        tfdataset = tfdataset.batch(batch_size)
+    tfdataset = tfdataset.batch(batch_size)
     return tfdataset
 
 
-def df_to_nparray(dataframe: PandasDataFrame, label: str) -> FeatureLabelPair:
-    """
-        Converts the Pandas DataFrame into features and labels in the form of numpy arrays.
+def df_to_nparray(dataframe, label):
+    """Split a Pandas DataFrame into features and labels.
 
-        :param dataframe: pandas dataframe to be converted
-        :param label: name of the target column for supervised learning
-        :return (X, y): features and labels for supervised learning
+    :param dataframe: DataFrame to be converted
+    :type dataframe: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :returns: features and labels for supervised learning
+    :rtype: (numpy.ndarray, numpy.ndarray)
+
+    .. note:: The dataframe is required to have this as one of its columns.
+    .. todo:: This is currently not being used anywhere.
     """
     X = dataframe.drop(label, axis=1).to_numpy()
     y = dataframe[label].to_numpy()
     return (X, y)
 
 
-def df_to_image(dataframe: PandasDataFrame, meandf: PandasDataFrame, stddf: PandasDataFrame,
-                label: str, img_size: tuple[int, int], outdir: str) -> None:
-    """
-        Converts tabular data into images.
+def df_to_image(dataframe, mean_df, std_df, label, img_size, out_dir):
+    """Convert a Pandas DataFrame into a directory of images without regard for pixel position.
 
-        :param dataframe: pandas dataframe to convert into image
-        :param meandf: pandas dataframe of means for normalization
-        :param stdevdf: pandas dataframe of standard deviations for normalization
-        :param label: name of the target column for supervised learning
-        :param img_size: dimensions of the resulting image
-        :param outdir: directory where the images will be stored
+    :param dataframe: DataFrame to convert into images
+    :type dataframe: pandas.DataFrame
+    :param mean_df: DataFrame of column means for normalization
+    :type mean_df: pandas.DataFrame
+    :param std_df: DataFrame of column standard deviations for normalization
+    :type std_df: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param img_size: dimensions of the resulting images
+    :type img_size: (int, int)
+    :param out_dir: output directory where the images will be stored
+    :type out_dir: str
+
+    .. todo:: Categorical variables are hard-coded.
     """
 
     def sigmoid(x):
@@ -79,7 +88,7 @@ def df_to_image(dataframe: PandasDataFrame, meandf: PandasDataFrame, stddf: Pand
 
     df_normal = dataframe.copy()
     for col in normalize:
-        df_normal[col] = sigmoid((df_normal[col]-meandf[col])/stddf[col])
+        df_normal[col] = sigmoid((df_normal[col]-mean_df[col])/std_df[col])
 
     df_normal['CHILD_SEX'] = df_normal['CHILD_SEX']/1
     df_normal['IDD_SCORE'] = df_normal['IDD_SCORE']/12
@@ -110,19 +119,23 @@ def df_to_image(dataframe: PandasDataFrame, meandf: PandasDataFrame, stddf: Pand
                 y = j*(w//nw)
                 r.rectangle([(y, x), (y+w//nw, x+h//nh)], fill=(val, val, val))
 
-        subdir = os.path.join(outdir, str(row['label']))
+        subdir = os.path.join(out_dir, str(row['label']))
         if not os.path.exists(subdir):
             os.makedirs(subdir)
         img.save(os.path.join(subdir, f'{index}.png'))
 
 
-def image_to_dataset(dir: str, img_size: tuple[int, int]) -> TensorflowDataset:
-    """
-        Creates a Image Tensorflow Dataset from a directory.
+def image_to_dataset(dir, img_size):
+    """Create a Tensorflow Dataset from a directory of images.
 
-        :param dir: directory of the images
-        :param img_size: dimensions of the images
-        :return dataset: tensorflow dataset based on the images
+    :param dir: directory of the images
+    :type dir: str
+    :param img_size: dimension of the images
+    :type img_size: (int, int)
+    :returns: Tensorflow Dataset based on the images
+    :rtype: tensorflow.data.Dataset
+
+    .. todo:: The batch size is fixed to 32.
     """
 
     dataset = tf.keras.utils.image_dataset_from_directory(
@@ -133,13 +146,17 @@ def image_to_dataset(dir: str, img_size: tuple[int, int]) -> TensorflowDataset:
     return dataset
 
 
-def get_metrics(predicted: npt.NDArray[np.int64], actual: npt.NDArray[np.int64]) -> ModelMetrics:
-    """
-        Extracts metrics from predictions.
+def get_metrics(predicted, actual):
+    """Extract relevant metrics from predictions.
 
-        :param predicted: numpy array of predictions
-        :param actual: numpy array of ground truth
-        :return (accuracy, sensitivity, specificity): model evaluation metrics
+    :param predicted: array of predictions
+    :type predicted: numpy.ndarray
+    :param actual: array of ground truth
+    :type actual: numpy.ndarray
+    :returns: model evaluation metrics (accuracy, sensitivity, specificity)
+    :rtype: (float, float, float)
+
+    .. todo:: This currently does not have Cohen's Kappa.
     """
     tp = np.sum((predicted == 1) & (actual == 1))
     tn = np.sum((predicted == 0) & (actual == 0))
@@ -153,12 +170,13 @@ def get_metrics(predicted: npt.NDArray[np.int64], actual: npt.NDArray[np.int64])
     return accuracy, sensitivity, specificity
 
 
-def kfold_metrics_to_df(metrics: dict) -> PandasDataFrame:
-    """
-        Converts k-fold metrics to a pandas dataframe for analysis.
+def kfold_metrics_to_df(metrics):
+    """Convert a k-fold metrics dictionary into a Pandas DataFrame row for analysis.
 
-        :param metrics: dictionary of metrics
-        :return dfrow: a pandas dataframe with a single row
+    :param metrics: dictionary of metrics from predunder.training.train_kfold(..)
+    :type metrics: dict
+    :returns: DataFrame with a single row
+    :rtype: pandas.DataFrame
     """
 
     dfrow = pd.DataFrame()
@@ -168,13 +186,17 @@ def kfold_metrics_to_df(metrics: dict) -> PandasDataFrame:
     return dfrow
 
 
-def oversample_data(train_set: PandasDataFrame, label: str, oversample: str = "none") -> PandasDataFrame:
-    """
-        Performs oversampling over the minority class using the specific technique.
-        :param train_set: pandas dataframe of the training set
-        :param label: name of the target column for supervised learning
-        :param oversample: oversampling algorithm to be applied
-        :return train: pandas dataframe of training set with oversampled data
+def oversample_data(train_set, label, oversample="none"):
+    """Perform oversampling over the minority class using the specific technique.
+
+    :param train_set: DataFrame of the training set
+    :type train_set: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
+    :type oversample: str, optional
+    :returns: DataFrame of training set with oversampled data
+    :rtype: pandas.DataFrame
     """
 
     # Returns origin train set if no oversampling is specified

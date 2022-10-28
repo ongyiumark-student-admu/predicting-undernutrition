@@ -1,31 +1,34 @@
 # Importing libraries
 import os
 import shutil
+
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import StratifiedKFold
 
-from typing import Callable
-import numpy.typing as npt
-from predunder.functions import df_to_dataset, image_to_dataset, oversample_data, get_metrics
-
-# Defining Aliases
-PandasDataFrame = pd.core.frame.DataFrame
+from predunder.functions import (df_to_dataset, get_metrics, image_to_dataset,
+                                 oversample_data)
 
 
-def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, features: list[str], layers: list[int],
-              oversample: str = "none") -> npt.NDArray[np.int64]:
-    """
-        Trains a dense neural network model with 'train' and evaluates the model on 'test'.
+def train_dnn(train, test, label, features, layers, oversample="none"):
+    """Train a dense neural network model and make predictions.
 
-        :param train: pandas dataframe of the training set
-        :param test: pandas dataframe of the testing set
-        :param label: name of the target column for supervised learning
-        :param features: list of features to include in training
-        :param layers: list of number of nodes per layer
-        :param oversample: oversampling algorithm to be applied
-        :return predicted: numpy array of class predictions
+    :param train: DataFrame of the training set
+    :type train: pandas.DataFrame
+    :param test: DataFrame of the testing set
+    :type test: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param features: features to include in training
+    :type features: list[str]
+    :param layers: number of nodes per hidden layer in the neural network
+    :type layers: list[int]
+    :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
+    :type oversample: str, optional
+    :returns: array of class predictions
+    :rtype: np.ndarray[int]
+
+    .. todo:: Build custom evaluation functions to get the model predictions with Tensorflow.
     """
     # Generate feauture columns
     all_inputs = []
@@ -59,8 +62,7 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
                   )
 
     # Training the Model
-    es = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
-    model.fit(train_ds, epochs=20, callbacks=[es], verbose=1)
+    model.fit(train_ds, epochs=10, verbose=1)
 
     # Getting predictions
     output = np.asarray([x[0] for x in model.predict(test_ds)])
@@ -69,75 +71,122 @@ def train_dnn(train: PandasDataFrame, test: PandasDataFrame, label: str, feature
     return predicted
 
 
-def train_naive_hive(train: PandasDataFrame, test: PandasDataFrame, label: str, num_hive: int, train_network: Callable, **kwargs) -> npt.NDArray[np.int64]:
-    """
-        Trains a random hive by naively training neural networks of the same architecture on the whole training set.
+# def train_naive_hive_sp(train, test, label, num_hive, train_network, **kwargs):
+#     """
+#         Trains a random hive by naively training neural networks of the same architecture on the whole training set.
 
-        :param train: pandas dataframe of the training set
-        :param test: pandas dataframe of the testing set
-        :param label: name of the target column for supervised learning
-        :param num_hive: number of networks in the hive
-        :param train_network: training function for each network
-        :param **kwargs: other keyword arguments for the training function
-        :return predicted: numpy array of class predictions
+#         :param train: pandas dataframe of the training set
+#         :param test: pandas dataframe of the testing set
+#         :param label: name of the target column for supervised learning
+#         :param num_hive: number of networks in the hive
+#         :param train_network: training function for each network
+#         :param **kwargs: other keyword arguments for the training function
+#         :return predicted: numpy array of class predictions
+#     """
+
+#     # Training networks
+#     ballots = []
+#     ballot_weights = []
+#     for x in range(num_hive):
+#         print(f"Training network {x+1}...")
+#         preds = train_network(train, test, label, **kwargs)
+#         sensitivity, specificity = get_metrics(preds, np.where(test[label].values == 'INCREASED RISK', 1, 0))[1:]
+#         weights = [sensitivity if p == 0 else specificity for p in preds]
+#         ballots.append(preds)
+#         ballot_weights.append(weights)
+#         print(f"Network {x+1} completed.")
+
+#     # Counting votes with smart voting
+#     predicted = []
+#     for p, w in zip(zip(*ballots), zip(*ballot_weights)):
+#         cnt0, cnt1 = (0, 0)
+#         for vote, weight in zip(p, w):
+#             if vote == 0:
+#                 cnt0 += 1-(weight <= 0.2)
+#             else:
+#                 cnt1 += 1-(weight <= 0.2)
+#         predicted.append(1 if cnt1 >= cnt0 else 0)
+
+#     return np.asarray(predicted)
+
+
+def train_naive_hive(train, test, label, num_hive, train_network, **kwargs):
+    """Train a random hive with neural networks of the same architecture on the whole training set.
+
+    :param train: DataFrame of the training set
+    :type train: pandas.DataFrame
+    :param test: DataFrame of the testing set
+    :type test: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param num_hive: number of networks in the hive
+    :type num_hive: int
+    :param train_network: training function for each network
+    :type: Callable[.., numpy.ndarray[int]]
+    :param **kwargs: other keyword arguments for the training function
+    :returns: array of class predictions
+    :rtype: numpy.ndarray[int]
+
+    .. todo:: Implement option for smarter voting.
     """
 
     # Training networks
     ballots = []
-    ballot_weights = []
     for x in range(num_hive):
         print(f"Training network {x+1}...")
         preds = train_network(train, test, label, **kwargs)
-        sensitivity, specificity = get_metrics(preds, np.where(test[label].values == 'INCREASED RISK', 1, 0))[1:]
-        weights = [sensitivity if p == 0 else specificity for p in preds]
         ballots.append(preds)
-        ballot_weights.append(weights)
         print(f"Network {x+1} completed.")
 
-    # Counting votes with smart voting
+    # Counting votes
     predicted = []
-    for p, w in zip(zip(*ballots), zip(*ballot_weights)):
-        cnt0, cnt1 = (0, 0)
-        for vote, weight in zip(p, w):
-            if vote == 0:
-                cnt0 += 1-(weight <= 0.2)
-            else:
-                cnt1 += 1-(weight <= 0.2)
-        predicted.append(1 if cnt1 >= cnt0 else 0)
+    for p in zip(*ballots):
+        votes = sum(p)
+        predicted.append(1 if 2*votes >= num_hive else 0)
 
     return np.asarray(predicted)
 
 
-def train_images(train: PandasDataFrame, test: PandasDataFrame, label: str, convert_func: Callable, img_size: tuple[int, int],
-                 tmpdir: str, oversample: str = "none", base_model: str = "mobilenetv2", learning_rate: float = 0.0001) -> npt.NDArray[np.int64]:
-    """
-        Converts tabular data into images and trains with transfer learning.
+def train_images(train, test, label, convert_func, img_size, tmp_dir, oversample="none", base_model="mobilenetv2", learning_rate=0.0001):
+    """Converts tabular data into images and train a classifier with transfer learning.
 
-        :param train: pandas dataframe of the training set
-        :param test: pandas dataframe of the testing set
-        :param label: name of the target column for supervised learning
-        :param convert_func: table to image converter function
-        :param img_size: dimensions of the resulting images
-        :param tmpdir: directory where the images will be temporarily stored
-        :param base_model: base model for transfer learning
-        :param learning_rate: learning rate for the neural network
-        :return predicted: numpy array of class predictions
+    :param train: DataFrame of the training set
+    :type train: pandas.DataFrame
+    :param test: DataFrame of the testing set
+    :type test: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param convert_func: table to image converter function
+    :type convert_func: Callable[.., None]
+    :param img_size: dimension of the resulting images
+    :type img_size: (int, int)
+    :param tmp_dir: output directory where the images will be temporarily stored
+    :type tmp_dir: str
+    :param base_model: base model for transfer learning from Keras_
+    :type base_model: str, optional
+    :param learning_rate: learning rate for the neural network
+    :type learning_rate: float, optional
+    :returns: array of class predictions
+    :rtype: numpy.array[int]
+
+    .. _Keras: https://keras.io/api/applications/
+    .. todo:: Build custom evaluation functions to get the model predictions with Tensorflow, and implement early stopping from validation loss.
     """
     # Deleting directory if exists
-    if os.path.exists(tmpdir):
-        shutil.rmtree(tmpdir)
+    if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
 
     featuredf = train.drop([label], axis=1)
     # Oversampling the training set
     train = oversample_data(train, label, oversample)
 
     # Generating images
-    convert_func(train, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmpdir, 'train'))
-    convert_func(test, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmpdir, 'test'))
+    convert_func(train, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmp_dir, 'train'))
+    convert_func(test, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmp_dir, 'test'))
 
     # Generating tensorflow dataset
-    train_ds = image_to_dataset(os.path.join(tmpdir, 'train'), img_size)
-    test_ds = image_to_dataset(os.path.join(tmpdir, 'test'), img_size)
+    train_ds = image_to_dataset(os.path.join(tmp_dir, 'train'), img_size)
+    test_ds = image_to_dataset(os.path.join(tmp_dir, 'test'), img_size)
 
     AUTOTUNE = tf.data.AUTOTUNE
     train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
@@ -186,23 +235,28 @@ def train_images(train: PandasDataFrame, test: PandasDataFrame, label: str, conv
     predicted = np.where(output >= 0.5, 1, 0)
 
     # Deleting temporary image folder
-    if os.path.exists(tmpdir):
-        shutil.rmtree(tmpdir)
+    if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
 
     return predicted
 
 
-def train_kfold(train_set: PandasDataFrame, label: str, num_fold: int, train_func: Callable, **kwargs) -> dict:
-    """
-        Validates a model with stratified k-fold cross validation.
+def train_kfold(train_set, label, num_fold, train_func, **kwargs):
+    """Validate a model with stratified k-fold cross validation.
 
-        :param train_set: pandas dataframe of the training set
-        :param label: name of the target column for supervised learning
-        :param num_fold: number of folds
-        :param train_func: training function of the model being validated
-        :param to_smote: flag for applying oversampling with SMOTE
-        :param **kwargs: other keyword arguments for the training function
-        :return metrics: dictionary of metrics including 'ACCURACY', 'SENSITIVITY', and 'SPECIFICITY'.
+    :param train_set: DataFrame of the training set
+    :type train_set: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param num_fold: number of folds
+    :type num_fold: int
+    :param train_func: training function of the model being validated
+    :type train_func: Callable[.., (flaot,flaot,flaot)]
+    :param **kwargs: other keyword arguments for the training function
+    :returns: dictionary of metrics.
+    :rtype: dict['ACCURACY'|'SENSITIVITY'|'SPECIFICITY']['ALL'|'MEAN'|'STD']
+
+    .. todo:: The function implicitly assumes that the label column only has values "INCREASED RISK" or "REDUCED RISK".
     """
 
     # Arrays for metrics
