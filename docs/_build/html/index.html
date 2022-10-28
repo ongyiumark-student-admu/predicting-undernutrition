@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Predicting Undernutrition’s documentation! &mdash; Predicting Undernutrition 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="#" class="icon icon-home"> Predicting Undernutrition
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Welcome to Predicting Undernutrition’s documentation!</a></li>
+<li><a class="reference internal" href="#predunder-package">predunder package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-src.predunder.functions">predunder.functions module</a><ul>
+<li><a class="reference internal" href="#src.predunder.functions.df_to_dataset"><code class="docutils literal notranslate"><span class="pre">df_to_dataset()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.functions.df_to_image"><code class="docutils literal notranslate"><span class="pre">df_to_image()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.functions.df_to_nparray"><code class="docutils literal notranslate"><span class="pre">df_to_nparray()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.functions.get_metrics"><code class="docutils literal notranslate"><span class="pre">get_metrics()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.functions.image_to_dataset"><code class="docutils literal notranslate"><span class="pre">image_to_dataset()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.functions.kfold_metrics_to_df"><code class="docutils literal notranslate"><span class="pre">kfold_metrics_to_df()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.functions.oversample_data"><code class="docutils literal notranslate"><span class="pre">oversample_data()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.predunder.hypertuning">predunder.hypertuning module</a><ul>
+<li><a class="reference internal" href="#src.predunder.hypertuning.tune_dnn"><code class="docutils literal notranslate"><span class="pre">tune_dnn()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.predunder.training">predunder.training module</a><ul>
+<li><a class="reference internal" href="#src.predunder.training.train_dnn"><code class="docutils literal notranslate"><span class="pre">train_dnn()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.training.train_images"><code class="docutils literal notranslate"><span class="pre">train_images()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.training.train_kfold"><code class="docutils literal notranslate"><span class="pre">train_kfold()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.training.train_naive_hive"><code class="docutils literal notranslate"><span class="pre">train_naive_hive()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.predunder">Module contents</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Predicting Undernutrition</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+      <li>Welcome to Predicting Undernutrition’s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-predicting-undernutrition-s-documentation">
+<h1>Welcome to Predicting Undernutrition’s documentation!<a class="headerlink" href="#welcome-to-predicting-undernutrition-s-documentation" title="Permalink to this heading"></a></h1>
+</section>
+<section id="predunder-package">
+<h1>predunder package<a class="headerlink" href="#predunder-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-src.predunder.functions">
+<span id="predunder-functions-module"></span><h2>predunder.functions module<a class="headerlink" href="#module-src.predunder.functions" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.functions.df_to_dataset">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">df_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#df_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.df_to_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a Pandas DataFrame into a Tensorflow Dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>pandas.DataFrame</em>) – DataFrame to be converted</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>shuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – shuffles the dataset</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – batch size of the dataset</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Tensorflow Dataset based on the DataFrame</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tensorflow.data.Dataset</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The dataframe is required to have this as one of its columns.</p>
+</div>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>The function implicitly assumes that the label column only has values “INCREASED RISK” or “REDUCED RISK”.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.functions.df_to_image">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">df_to_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#df_to_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.df_to_image" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a Pandas DataFrame into a directory of images without regard for pixel position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>pandas.DataFrame</em>) – DataFrame to convert into images</p></li>
+<li><p><strong>mean_df</strong> (<em>pandas.DataFrame</em>) – DataFrame of column means for normalization</p></li>
+<li><p><strong>std_df</strong> (<em>pandas.DataFrame</em>) – DataFrame of column standard deviations for normalization</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>img_size</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em>) – dimensions of the resulting images</p></li>
+<li><p><strong>out_dir</strong> (<em>str</em>) – output directory where the images will be stored</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id2">
+<p class="admonition-title">Todo</p>
+<p>Categorical variables are hard-coded.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.functions.df_to_nparray">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">df_to_nparray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#df_to_nparray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.df_to_nparray" title="Permalink to this definition"></a></dt>
+<dd><p>Split a Pandas DataFrame into features and labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataframe</strong> (<em>pandas.DataFrame</em>) – DataFrame to be converted</p></li>
+<li><p><strong>label</strong> – name of the target column for supervised learning</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>features and labels for supervised learning</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(numpy.ndarray, numpy.ndarray)</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The dataframe is required to have this as one of its columns.</p>
+</div>
+<div class="admonition-todo admonition" id="id3">
+<p class="admonition-title">Todo</p>
+<p>This is currently not being used anywhere.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.functions.get_metrics">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">get_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predicted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actual</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#get_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.get_metrics" title="Permalink to this definition"></a></dt>
+<dd><p>Extract relevant metrics from predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>predicted</strong> (<em>numpy.ndarray</em>) – array of predictions</p></li>
+<li><p><strong>actual</strong> (<em>numpy.ndarray</em>) – array of ground truth</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>model evaluation metrics (accuracy, sensitivity, specificity)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(float, float, float)</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id4">
+<p class="admonition-title">Todo</p>
+<p>This currently does not have Cohen’s Kappa.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.functions.image_to_dataset">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">image_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#image_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.image_to_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Create a Tensorflow Dataset from a directory of images.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dir</strong> (<em>str</em>) – directory of the images</p></li>
+<li><p><strong>img_size</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em>) – dimension of the images</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Tensorflow Dataset based on the images</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tensorflow.data.Dataset</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id5">
+<p class="admonition-title">Todo</p>
+<p>The batch size is fixed to 32.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.functions.kfold_metrics_to_df">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">kfold_metrics_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#kfold_metrics_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.kfold_metrics_to_df" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a k-fold metrics dictionary into a Pandas DataFrame row for analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>metrics</strong> (<em>dict</em>) – dictionary of metrics from predunder.training.train_kfold(..)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame with a single row</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.functions.oversample_data">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">oversample_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#oversample_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.oversample_data" title="Permalink to this definition"></a></dt>
+<dd><p>Perform oversampling over the minority class using the specific technique.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_set</strong> (<em>pandas.DataFrame</em>) – DataFrame of the training set</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>oversample</strong> (<em>str</em><em>, </em><em>optional</em>) – oversampling algorithm to be applied (“none”, “smote”, “adasyn”, “borderline”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame of training set with oversampled data</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-src.predunder.hypertuning">
+<span id="predunder-hypertuning-module"></span><h2>predunder.hypertuning module<a class="headerlink" href="#module-src.predunder.hypertuning" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.hypertuning.tune_dnn">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.hypertuning.</span></span><span class="sig-name descname"><span class="pre">tune_dnn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/hypertuning.html#tune_dnn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.hypertuning.tune_dnn" title="Permalink to this definition"></a></dt>
+<dd><p>Brute force number of nodes in a neural network up to three hidden layers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train</strong> (<em>pandas.DataFrame</em>) – DataFrame of the training set</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>fold</strong> (<em>int</em>) – number of folds for k-fold cross-validation</p></li>
+<li><p><strong>max_nodes</strong> (<em>int</em>) – maximum number of nodes per layer</p></li>
+<li><p><strong>oversample</strong> (<em>str</em><em>, </em><em>optional</em>) – oversampling algorithm to be applied (“none”, “smote”, “adasyn”, “borderline”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame of results</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-src.predunder.training">
+<span id="predunder-training-module"></span><h2>predunder.training module<a class="headerlink" href="#module-src.predunder.training" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.training.train_dnn">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.training.</span></span><span class="sig-name descname"><span class="pre">train_dnn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/training.html#train_dnn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.training.train_dnn" title="Permalink to this definition"></a></dt>
+<dd><p>Train a dense neural network model and make predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train</strong> (<em>pandas.DataFrame</em>) – DataFrame of the training set</p></li>
+<li><p><strong>test</strong> (<em>pandas.DataFrame</em>) – DataFrame of the testing set</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>features</strong> (<em>list</em><em>[</em><em>str</em><em>]</em>) – features to include in training</p></li>
+<li><p><strong>layers</strong> (<em>list</em><em>[</em><em>int</em><em>]</em>) – number of nodes per hidden layer in the neural network</p></li>
+<li><p><strong>oversample</strong> (<em>str</em><em>, </em><em>optional</em>) – oversampling algorithm to be applied (“none”, “smote”, “adasyn”, “borderline”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>array of class predictions</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[int]</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id6">
+<p class="admonition-title">Todo</p>
+<p>Build custom evaluation functions to get the model predictions with Tensorflow.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.training.train_images">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.training.</span></span><span class="sig-name descname"><span class="pre">train_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convert_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmp_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mobilenetv2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/training.html#train_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.training.train_images" title="Permalink to this definition"></a></dt>
+<dd><p>Converts tabular data into images and train a classifier with transfer learning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train</strong> (<em>pandas.DataFrame</em>) – DataFrame of the training set</p></li>
+<li><p><strong>test</strong> (<em>pandas.DataFrame</em>) – DataFrame of the testing set</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>convert_func</strong> (<em>Callable</em><em>[</em><em>..</em><em>, </em><em>None</em><em>]</em>) – table to image converter function</p></li>
+<li><p><strong>img_size</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em>) – dimension of the resulting images</p></li>
+<li><p><strong>tmp_dir</strong> (<em>str</em>) – output directory where the images will be temporarily stored</p></li>
+<li><p><strong>base_model</strong> (<em>str</em><em>, </em><em>optional</em>) – base model for transfer learning from <a class="reference external" href="https://keras.io/api/applications/">Keras</a></p></li>
+<li><p><strong>learning_rate</strong> (<em>float</em><em>, </em><em>optional</em>) – learning rate for the neural network</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>array of class predictions</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.array[int]</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id7">
+<p class="admonition-title">Todo</p>
+<p>Build custom evaluation functions to get the model predictions with Tensorflow, and implement early stopping from validation loss.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.training.train_kfold">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.training.</span></span><span class="sig-name descname"><span class="pre">train_kfold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_fold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/training.html#train_kfold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.training.train_kfold" title="Permalink to this definition"></a></dt>
+<dd><p>Validate a model with stratified k-fold cross validation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_set</strong> (<em>pandas.DataFrame</em>) – DataFrame of the training set</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>num_fold</strong> (<em>int</em>) – number of folds</p></li>
+<li><p><strong>train_func</strong> (<em>Callable</em><em>[</em><em>..</em><em>, </em><em>(</em><em>flaot</em><em>,</em><em>flaot</em><em>,</em><em>flaot</em><em>)</em><em>]</em>) – training function of the model being validated</p></li>
+<li><p><strong>**kwargs</strong> – <p>other keyword arguments for the training function</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary of metrics.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict[‘ACCURACY’|’SENSITIVITY’|’SPECIFICITY’][‘ALL’|’MEAN’|’STD’]</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id10">
+<p class="admonition-title">Todo</p>
+<p>The function implicitly assumes that the label column only has values “INCREASED RISK” or “REDUCED RISK”.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.training.train_naive_hive">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.training.</span></span><span class="sig-name descname"><span class="pre">train_naive_hive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_hive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_network</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/training.html#train_naive_hive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.training.train_naive_hive" title="Permalink to this definition"></a></dt>
+<dd><p>Train a random hive with neural networks of the same architecture on the whole training set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train</strong> (<em>pandas.DataFrame</em>) – DataFrame of the training set</p></li>
+<li><p><strong>test</strong> (<em>pandas.DataFrame</em>) – DataFrame of the testing set</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>num_hive</strong> (<em>int</em>) – number of networks in the hive</p></li>
+<li><p><strong>train_network</strong> – training function for each network</p></li>
+<li><p><strong>**kwargs</strong> – <p>other keyword arguments for the training function</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Type</dt>
+<dd class="field-even"><p>Callable[.., numpy.ndarray[int]]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>array of class predictions</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>numpy.ndarray[int]</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id13">
+<p class="admonition-title">Todo</p>
+<p>Implement option for smarter voting.</p>
+</div>
+</dd></dl>
+
+</section>
+<section id="module-src.predunder">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.predunder" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Ong Yiu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

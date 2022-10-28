@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.predunder.functions &mdash; Predicting Undernutrition 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Predicting Undernutrition
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Predicting Undernutrition</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>src.predunder.functions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.predunder.functions</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Importing libraries</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">imblearn</span> <span class="k">as</span> <span class="nn">imb</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageDraw</span>
+
+
+<div class="viewcode-block" id="df_to_dataset"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.df_to_dataset">[docs]</a><span class="k">def</span> <span class="nf">df_to_dataset</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a Pandas DataFrame into a Tensorflow Dataset.</span>
+
+<span class="sd">    :param dataframe: DataFrame to be converted</span>
+<span class="sd">    :type dataframe: pandas.DataFrame</span>
+<span class="sd">    :param label: name of the target column for supervised learning</span>
+<span class="sd">    :type label: str</span>
+<span class="sd">    :param shuffle: shuffles the dataset</span>
+<span class="sd">    :type shuffle: bool, optional</span>
+<span class="sd">    :param batch_size: batch size of the dataset</span>
+<span class="sd">    :type batch_size: int, optional</span>
+<span class="sd">    :returns: Tensorflow Dataset based on the DataFrame</span>
+<span class="sd">    :rtype: tensorflow.data.Dataset</span>
+
+<span class="sd">    .. note:: The dataframe is required to have this as one of its columns.</span>
+<span class="sd">    .. todo:: The function implicitly assumes that the label column only has values &quot;INCREASED RISK&quot; or &quot;REDUCED RISK&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">dataframe</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">dataframe</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;INCREASED RISK&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+
+    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;target&#39;</span><span class="p">)</span>
+    <span class="n">tfdataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="o">.</span><span class="n">from_tensor_slices</span><span class="p">((</span><span class="nb">dict</span><span class="p">(</span><span class="n">dataframe</span><span class="p">),</span> <span class="n">labels</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">shuffle</span><span class="p">:</span>
+        <span class="n">tfdataset</span> <span class="o">=</span> <span class="n">tfdataset</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">buffer_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dataframe</span><span class="p">))</span>
+    <span class="n">tfdataset</span> <span class="o">=</span> <span class="n">tfdataset</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tfdataset</span></div>
+
+
+<div class="viewcode-block" id="df_to_nparray"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.df_to_nparray">[docs]</a><span class="k">def</span> <span class="nf">df_to_nparray</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Split a Pandas DataFrame into features and labels.</span>
+
+<span class="sd">    :param dataframe: DataFrame to be converted</span>
+<span class="sd">    :type dataframe: pandas.DataFrame</span>
+<span class="sd">    :param label: name of the target column for supervised learning</span>
+<span class="sd">    :returns: features and labels for supervised learning</span>
+<span class="sd">    :rtype: (numpy.ndarray, numpy.ndarray)</span>
+
+<span class="sd">    .. note:: The dataframe is required to have this as one of its columns.</span>
+<span class="sd">    .. todo:: This is currently not being used anywhere.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="df_to_image"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.df_to_image">[docs]</a><span class="k">def</span> <span class="nf">df_to_image</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">mean_df</span><span class="p">,</span> <span class="n">std_df</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">out_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a Pandas DataFrame into a directory of images without regard for pixel position.</span>
+
+<span class="sd">    :param dataframe: DataFrame to convert into images</span>
+<span class="sd">    :type dataframe: pandas.DataFrame</span>
+<span class="sd">    :param mean_df: DataFrame of column means for normalization</span>
+<span class="sd">    :type mean_df: pandas.DataFrame</span>
+<span class="sd">    :param std_df: DataFrame of column standard deviations for normalization</span>
+<span class="sd">    :type std_df: pandas.DataFrame</span>
+<span class="sd">    :param label: name of the target column for supervised learning</span>
+<span class="sd">    :type label: str</span>
+<span class="sd">    :param img_size: dimensions of the resulting images</span>
+<span class="sd">    :type img_size: (int, int)</span>
+<span class="sd">    :param out_dir: output directory where the images will be stored</span>
+<span class="sd">    :type out_dir: str</span>
+
+<span class="sd">    .. todo:: Categorical variables are hard-coded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">))</span>
+
+    <span class="n">features</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="n">label</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="c1"># Normalize variables</span>
+    <span class="n">normalize</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;AGE&#39;</span><span class="p">,</span> <span class="s1">&#39;HHID_count&#39;</span><span class="p">,</span> <span class="s1">&#39;HH_AGE&#39;</span><span class="p">,</span> <span class="s1">&#39;FOOD_EXPENSE_WEEKLY&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;NON-FOOD_EXPENSE_WEEKLY&#39;</span><span class="p">,</span> <span class="s1">&#39;YoungBoys&#39;</span><span class="p">,</span> <span class="s1">&#39;YoungGirls&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;AverageMonthlyIncome&#39;</span><span class="p">,</span> <span class="s1">&#39;FOOD_EXPENSE_WEEKLY_pc&#39;</span><span class="p">,</span> <span class="s1">&#39;NON-FOOD_EXPENSE_WEEKLY_pc&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;AverageMonthlyIncome_pc&#39;</span>
+                 <span class="p">]</span>
+
+    <span class="n">df_normal</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">normalize</span><span class="p">:</span>
+        <span class="n">df_normal</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmoid</span><span class="p">((</span><span class="n">df_normal</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">-</span><span class="n">mean_df</span><span class="p">[</span><span class="n">col</span><span class="p">])</span><span class="o">/</span><span class="n">std_df</span><span class="p">[</span><span class="n">col</span><span class="p">])</span>
+
+    <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;CHILD_SEX&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;CHILD_SEX&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">1</span>
+    <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;IDD_SCORE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;IDD_SCORE&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">12</span>
+    <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;HDD_SCORE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;HDD_SCORE&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">12</span>
+    <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;FOOD_INSECURITY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;FOOD_INSECURITY&#39;</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">3</span>
+    <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;BEN_4PS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;BEN_4PS&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span>
+    <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;AREA_TYPE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;AREA_TYPE&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">1</span>
+
+    <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df_normal</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;INCREASED RISK&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Generate images</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+    <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">img_size</span>
+    <span class="n">nw</span> <span class="o">=</span> <span class="n">n</span><span class="o">//</span><span class="mi">4</span>
+    <span class="n">nh</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="n">nw</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">//</span><span class="n">nw</span>
+
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df_normal</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;RGB&quot;</span><span class="p">,</span> <span class="n">img_size</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nh</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nw</span><span class="p">):</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">nw</span><span class="o">+</span><span class="n">j</span>
+                <span class="k">if</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">features</span><span class="p">[</span><span class="n">idx</span><span class="p">]])</span><span class="o">*</span><span class="mi">255</span><span class="p">)</span>
+
+                <span class="n">r</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="p">(</span><span class="n">h</span><span class="o">//</span><span class="n">nh</span><span class="p">)</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="p">(</span><span class="n">w</span><span class="o">//</span><span class="n">nw</span><span class="p">)</span>
+                <span class="n">r</span><span class="o">.</span><span class="n">rectangle</span><span class="p">([(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="n">y</span><span class="o">+</span><span class="n">w</span><span class="o">//</span><span class="n">nw</span><span class="p">,</span> <span class="n">x</span><span class="o">+</span><span class="n">h</span><span class="o">//</span><span class="n">nh</span><span class="p">)],</span> <span class="n">fill</span><span class="o">=</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
+
+        <span class="n">subdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">subdir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">subdir</span><span class="p">)</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subdir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s1">.png&#39;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="image_to_dataset"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.image_to_dataset">[docs]</a><span class="k">def</span> <span class="nf">image_to_dataset</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">img_size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a Tensorflow Dataset from a directory of images.</span>
+
+<span class="sd">    :param dir: directory of the images</span>
+<span class="sd">    :type dir: str</span>
+<span class="sd">    :param img_size: dimension of the images</span>
+<span class="sd">    :type img_size: (int, int)</span>
+<span class="sd">    :returns: Tensorflow Dataset based on the images</span>
+<span class="sd">    :rtype: tensorflow.data.Dataset</span>
+
+<span class="sd">    .. todo:: The batch size is fixed to 32.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">image_dataset_from_directory</span><span class="p">(</span>
+        <span class="nb">dir</span><span class="p">,</span>
+        <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+        <span class="n">image_size</span><span class="o">=</span><span class="n">img_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
+
+
+<div class="viewcode-block" id="get_metrics"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.get_metrics">[docs]</a><span class="k">def</span> <span class="nf">get_metrics</span><span class="p">(</span><span class="n">predicted</span><span class="p">,</span> <span class="n">actual</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract relevant metrics from predictions.</span>
+
+<span class="sd">    :param predicted: array of predictions</span>
+<span class="sd">    :type predicted: numpy.ndarray</span>
+<span class="sd">    :param actual: array of ground truth</span>
+<span class="sd">    :type actual: numpy.ndarray</span>
+<span class="sd">    :returns: model evaluation metrics (accuracy, sensitivity, specificity)</span>
+<span class="sd">    :rtype: (float, float, float)</span>
+
+<span class="sd">    .. todo:: This currently does not have Cohen&#39;s Kappa.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">predicted</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">actual</span> <span class="o">==</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">tn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">predicted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">actual</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">fp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">predicted</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">actual</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">fn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">predicted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">actual</span> <span class="o">==</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">accuracy</span> <span class="o">=</span> <span class="p">(</span><span class="n">tp</span><span class="o">+</span><span class="n">tn</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">tp</span><span class="o">+</span><span class="n">tn</span><span class="o">+</span><span class="n">fp</span><span class="o">+</span><span class="n">fn</span><span class="p">)</span>
+    <span class="n">sensitivity</span> <span class="o">=</span> <span class="n">tp</span><span class="o">/</span><span class="p">(</span><span class="n">tp</span><span class="o">+</span><span class="n">fn</span><span class="p">)</span>
+    <span class="n">specificity</span> <span class="o">=</span> <span class="n">tn</span><span class="o">/</span><span class="p">(</span><span class="n">tn</span><span class="o">+</span><span class="n">fp</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">sensitivity</span><span class="p">,</span> <span class="n">specificity</span></div>
+
+
+<div class="viewcode-block" id="kfold_metrics_to_df"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.kfold_metrics_to_df">[docs]</a><span class="k">def</span> <span class="nf">kfold_metrics_to_df</span><span class="p">(</span><span class="n">metrics</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert a k-fold metrics dictionary into a Pandas DataFrame row for analysis.</span>
+
+<span class="sd">    :param metrics: dictionary of metrics from predunder.training.train_kfold(..)</span>
+<span class="sd">    :type metrics: dict</span>
+<span class="sd">    :returns: DataFrame with a single row</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dfrow</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">vals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dfrow</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">val</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">dfrow</span></div>
+
+
+<div class="viewcode-block" id="oversample_data"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.oversample_data">[docs]</a><span class="k">def</span> <span class="nf">oversample_data</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">oversample</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Perform oversampling over the minority class using the specific technique.</span>
+
+<span class="sd">    :param train_set: DataFrame of the training set</span>
+<span class="sd">    :type train_set: pandas.DataFrame</span>
+<span class="sd">    :param label: name of the target column for supervised learning</span>
+<span class="sd">    :type label: str</span>
+<span class="sd">    :param oversample: oversampling algorithm to be applied (&quot;none&quot;, &quot;smote&quot;, &quot;adasyn&quot;, &quot;borderline&quot;)</span>
+<span class="sd">    :type oversample: str, optional</span>
+<span class="sd">    :returns: DataFrame of training set with oversampled data</span>
+<span class="sd">    :rtype: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Returns origin train set if no oversampling is specified</span>
+    <span class="k">if</span> <span class="n">oversample</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">train_set</span>
+
+    <span class="c1"># Separating dataset into features and labels</span>
+    <span class="n">x_train</span> <span class="o">=</span> <span class="n">train_set</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="n">label</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">y_train</span> <span class="o">=</span> <span class="n">train_set</span><span class="p">[[</span><span class="n">label</span><span class="p">]]</span>
+
+    <span class="c1"># Applying specified oversampling techinque</span>
+    <span class="k">if</span> <span class="n">oversample</span> <span class="o">==</span> <span class="s2">&quot;smote&quot;</span><span class="p">:</span>
+        <span class="n">ovs</span> <span class="o">=</span> <span class="n">imb</span><span class="o">.</span><span class="n">over_sampling</span><span class="o">.</span><span class="n">SMOTE</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">oversample</span> <span class="o">==</span> <span class="s2">&quot;adasyn&quot;</span><span class="p">:</span>
+        <span class="n">ovs</span> <span class="o">=</span> <span class="n">imb</span><span class="o">.</span><span class="n">over_sampling</span><span class="o">.</span><span class="n">ADASYN</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">oversample</span> <span class="o">==</span> <span class="s2">&quot;borderline&quot;</span><span class="p">:</span>
+        <span class="n">ovs</span> <span class="o">=</span> <span class="n">imb</span><span class="o">.</span><span class="n">over_sampling</span><span class="o">.</span><span class="n">BorderlineSMOTE</span><span class="p">()</span>
+    <span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span> <span class="o">=</span> <span class="n">ovs</span><span class="o">.</span><span class="n">fit_resample</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+    <span class="n">train</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">left_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">train</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Ong Yiu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
