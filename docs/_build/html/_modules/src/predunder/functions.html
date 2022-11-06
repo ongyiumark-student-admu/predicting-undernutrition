@@ -73,6 +73,22 @@
 <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageDraw</span>
 
 
+<div class="viewcode-block" id="convert_labels"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.convert_labels">[docs]</a><span class="k">def</span> <span class="nf">convert_labels</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts labels to ordinal numbers.</span>
+
+<span class="sd">    :param labels: array of labels for supervised learning</span>
+<span class="sd">    :type labels: numpy.ndarray[str]</span>
+<span class="sd">    :returns: converted array of labels</span>
+<span class="sd">    :rtype: numpy.ndarray[int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">LABELS_DICT</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;REDUCED RISK&#39;</span><span class="p">,</span> <span class="s1">&#39;INCREASED RISK&#39;</span><span class="p">],</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;UNDER&#39;</span><span class="p">,</span> <span class="s1">&#39;ADEQUATE&#39;</span><span class="p">,</span> <span class="s1">&#39;OVER&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+    <span class="n">sz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">LABELS_DICT</span><span class="p">[</span><span class="n">sz</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">labels</span><span class="p">)))</span></div>
+
+
 <div class="viewcode-block" id="df_to_dataset"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.df_to_dataset">[docs]</a><span class="k">def</span> <span class="nf">df_to_dataset</span><span class="p">(</span><span class="n">dataframe</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert a Pandas DataFrame into a Tensorflow Dataset.</span>
 
@@ -88,10 +104,9 @@
 <span class="sd">    :rtype: tensorflow.data.Dataset</span>
 
 <span class="sd">    .. note:: The dataframe is required to have this as one of its columns.</span>
-<span class="sd">    .. todo:: The function implicitly assumes that the label column only has values &quot;INCREASED RISK&quot; or &quot;REDUCED RISK&quot;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">dataframe</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">dataframe</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;INCREASED RISK&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">dataframe</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert_labels</span><span class="p">(</span><span class="n">dataframe</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
     <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
 
     <span class="n">dataframe</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -117,6 +132,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">dataframe</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
     <span class="k">return</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span></div>
 
 
@@ -162,7 +178,7 @@
     <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;BEN_4PS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;BEN_4PS&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span>
     <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;AREA_TYPE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;AREA_TYPE&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">1</span>
 
-    <span class="n">df_normal</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df_normal</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;INCREASED RISK&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">df_normal</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert_labels</span><span class="p">(</span><span class="n">df_normal</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
     <span class="c1"># Generate images</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
@@ -184,7 +200,7 @@
                 <span class="n">y</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="p">(</span><span class="n">w</span><span class="o">//</span><span class="n">nw</span><span class="p">)</span>
                 <span class="n">r</span><span class="o">.</span><span class="n">rectangle</span><span class="p">([(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="n">y</span><span class="o">+</span><span class="n">w</span><span class="o">//</span><span class="n">nw</span><span class="p">,</span> <span class="n">x</span><span class="o">+</span><span class="n">h</span><span class="o">//</span><span class="n">nh</span><span class="p">)],</span> <span class="n">fill</span><span class="o">=</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
 
-        <span class="n">subdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]))</span>
+        <span class="n">subdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="n">label</span><span class="p">]))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">subdir</span><span class="p">):</span>
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">subdir</span><span class="p">)</span>
         <span class="n">img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subdir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s1">.png&#39;</span><span class="p">))</span></div>
@@ -222,6 +238,7 @@
 <span class="sd">    :rtype: (float, float, float)</span>
 
 <span class="sd">    .. todo:: This currently does not have Cohen&#39;s Kappa.</span>
+<span class="sd">    .. todo:: This only supports binary classification.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">tp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">predicted</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">actual</span> <span class="o">==</span> <span class="mi">1</span><span class="p">))</span>
     <span class="n">tn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">predicted</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">actual</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
@@ -235,11 +252,15 @@
     <span class="k">return</span> <span class="n">accuracy</span><span class="p">,</span> <span class="n">sensitivity</span><span class="p">,</span> <span class="n">specificity</span></div>
 
 
-<div class="viewcode-block" id="kfold_metrics_to_df"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.kfold_metrics_to_df">[docs]</a><span class="k">def</span> <span class="nf">kfold_metrics_to_df</span><span class="p">(</span><span class="n">metrics</span><span class="p">):</span>
+<div class="viewcode-block" id="kfold_metrics_to_df"><a class="viewcode-back" href="../../../predunder.html#src.predunder.functions.kfold_metrics_to_df">[docs]</a><span class="k">def</span> <span class="nf">kfold_metrics_to_df</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">include_all</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_stdev</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert a k-fold metrics dictionary into a Pandas DataFrame row for analysis.</span>
 
 <span class="sd">    :param metrics: dictionary of metrics from predunder.training.train_kfold(..)</span>
 <span class="sd">    :type metrics: dict</span>
+<span class="sd">    :param include_all: includes a list of all the metrics per fold</span>
+<span class="sd">    :type include_all: bool, optional</span>
+<span class="sd">    :param include_stdev: includes the standard devation of metrics across folds</span>
+<span class="sd">    :type include_stdev: bool, optional</span>
 <span class="sd">    :returns: DataFrame with a single row</span>
 <span class="sd">    :rtype: pandas.DataFrame</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -248,6 +269,13 @@
     <span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">vals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">dfrow</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">val</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_all</span><span class="p">:</span>
+        <span class="n">dfrow</span> <span class="o">=</span> <span class="n">dfrow</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">dfrow</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;ALL$&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">include_stdev</span><span class="p">:</span>
+        <span class="n">dfrow</span> <span class="o">=</span> <span class="n">dfrow</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">dfrow</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;STDEV$&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">dfrow</span></div>
 
 

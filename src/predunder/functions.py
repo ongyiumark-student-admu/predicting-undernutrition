@@ -8,6 +8,22 @@ import tensorflow as tf
 from PIL import Image, ImageDraw
 
 
+def convert_labels(labels):
+    """Converts labels to ordinal numbers.
+
+    :param labels: array of labels for supervised learning
+    :type labels: numpy.ndarray[str]
+    :returns: converted array of labels
+    :rtype: numpy.ndarray[int]
+    """
+    LABELS_DICT = {
+        2: ['REDUCED RISK', 'INCREASED RISK'],
+        3: ['UNDER', 'ADEQUATE', 'OVER']
+    }
+    sz = np.unique(labels).size
+    return np.asarray(list(map(lambda v: LABELS_DICT[sz].index(v), labels)))
+
+
 def df_to_dataset(dataframe, label, shuffle=True, batch_size=8):
     """Convert a Pandas DataFrame into a Tensorflow Dataset.
 
@@ -23,10 +39,9 @@ def df_to_dataset(dataframe, label, shuffle=True, batch_size=8):
     :rtype: tensorflow.data.Dataset
 
     .. note:: The dataframe is required to have this as one of its columns.
-    .. todo:: The function implicitly assumes that the label column only has values "INCREASED RISK" or "REDUCED RISK".
     """
     dataframe = dataframe.copy()
-    dataframe['target'] = np.where(dataframe[label] == 'INCREASED RISK', 1, 0)
+    dataframe['target'] = convert_labels(dataframe[label].values)
     dataframe = dataframe.drop(columns=label)
 
     dataframe = dataframe.copy()
@@ -52,6 +67,7 @@ def df_to_nparray(dataframe, label):
     """
     X = dataframe.drop(label, axis=1).to_numpy()
     y = dataframe[label].to_numpy()
+
     return (X, y)
 
 
@@ -97,7 +113,7 @@ def df_to_image(dataframe, mean_df, std_df, label, img_size, out_dir):
     df_normal['BEN_4PS'] = df_normal['BEN_4PS']/2
     df_normal['AREA_TYPE'] = df_normal['AREA_TYPE']/1
 
-    df_normal['label'] = np.where(df_normal[label] == "INCREASED RISK", 1, 0)
+    df_normal[label] = convert_labels(df_normal[label].values)
 
     # Generate images
     n = len(features)
@@ -119,7 +135,7 @@ def df_to_image(dataframe, mean_df, std_df, label, img_size, out_dir):
                 y = j*(w//nw)
                 r.rectangle([(y, x), (y+w//nw, x+h//nh)], fill=(val, val, val))
 
-        subdir = os.path.join(out_dir, str(row['label']))
+        subdir = os.path.join(out_dir, str(row[label]))
         if not os.path.exists(subdir):
             os.makedirs(subdir)
         img.save(os.path.join(subdir, f'{index}.png'))
@@ -157,6 +173,7 @@ def get_metrics(predicted, actual):
     :rtype: (float, float, float)
 
     .. todo:: This currently does not have Cohen's Kappa.
+    .. todo:: This only supports binary classification.
     """
     tp = np.sum((predicted == 1) & (actual == 1))
     tn = np.sum((predicted == 0) & (actual == 0))
@@ -170,11 +187,15 @@ def get_metrics(predicted, actual):
     return accuracy, sensitivity, specificity
 
 
-def kfold_metrics_to_df(metrics):
+def kfold_metrics_to_df(metrics, include_all=False, include_stdev=True):
     """Convert a k-fold metrics dictionary into a Pandas DataFrame row for analysis.
 
     :param metrics: dictionary of metrics from predunder.training.train_kfold(..)
     :type metrics: dict
+    :param include_all: includes a list of all the metrics per fold
+    :type include_all: bool, optional
+    :param include_stdev: includes the standard devation of metrics across folds
+    :type include_stdev: bool, optional
     :returns: DataFrame with a single row
     :rtype: pandas.DataFrame
     """
@@ -183,6 +204,13 @@ def kfold_metrics_to_df(metrics):
     for metric, vals in metrics.items():
         for key, val in vals.items():
             dfrow[f"{metric}_{key}"] = [val]
+
+    if not include_all:
+        dfrow = dfrow.drop(dfrow.filter(regex='ALL$').columns.to_list(), axis=1)
+
+    if not include_stdev:
+        dfrow = dfrow.drop(dfrow.filter(regex='STDEV$').columns.to_list(), axis=1)
+
     return dfrow
 
 

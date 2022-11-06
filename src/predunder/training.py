@@ -3,11 +3,65 @@ import os
 import shutil
 
 import numpy as np
+import pandas as pd
 import tensorflow as tf
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.ensemble import RandomForestClassifier
 
-from predunder.functions import (df_to_dataset, get_metrics, image_to_dataset,
-                                 oversample_data)
+from predunder.functions import (convert_labels, df_to_nparray, df_to_dataset, get_metrics,
+                                 image_to_dataset, oversample_data)
+
+
+def train_random_forest(train, test, label, oversample="none"):
+    """Train a random forest model and make predictions.
+
+    :param train: DataFrame of the training set
+    :type train: pandas.DataFrame
+    :param test: DataFrame of the testing set
+    :type test: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
+    :type oversample: str, optional
+    :returns: array of class predictions
+    :rtype: np.ndarray[int]
+    """
+    # Oversampling the training set
+    train = oversample_data(train, label, oversample)
+
+    clf = RandomForestClassifier(max_depth=2, random_state=42)
+    X_train, y_train = df_to_nparray(train, label)
+    X_test, y_test = df_to_nparray(test, label)
+
+    clf.fit(X_train, convert_labels(y_train))
+    predicted = clf.predict(X_test)
+    return predicted
+
+
+def train_xgboost(train, test, label, oversample="none"):
+    """Train an XGBoost model and make predictions.
+
+    :param train: DataFrame of the training set
+    :type train: pandas.DataFrame
+    :param test: DataFrame of the testing set
+    :type test: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
+    :type oversample: str, optional
+    :returns: array of class predictions
+    :rtype: np.ndarray[int]
+    """
+    # Oversampling the training set
+    train = oversample_data(train, label, oversample)
+
+    clf = RandomForestClassifier(max_depth=2, random_state=42)
+    X_train, y_train = df_to_nparray(train, label)
+    X_test, y_test = df_to_nparray(test, label)
+
+    clf.fit(X_train, convert_labels(y_train))
+    predicted = clf.predict(X_test)
+    return predicted
 
 
 def train_dnn(train, test, label, features, layers, oversample="none"):
@@ -29,17 +83,30 @@ def train_dnn(train, test, label, features, layers, oversample="none"):
     :rtype: np.ndarray[int]
 
     .. todo:: Build custom evaluation functions to get the model predictions with Tensorflow.
+    .. todo:: This only supports binary classification.
     """
     # Generate feauture columns
     all_inputs = []
     for col in features:
         all_inputs.append(tf.keras.Input(shape=(1,), name=col))
 
+    X_train, X_val, y_train, y_val = train_test_split(
+        train.drop(label, axis=1),
+        train[[label]],
+        test_size=0.2,
+        random_state=42,
+        stratify=train[label]
+    )
+
+    train = pd.merge(X_train, y_train, left_index=True, right_index=True)
+    val = pd.merge(X_val, y_val, left_index=True, right_index=True)
+
     # Oversampling the training set
     train = oversample_data(train, label, oversample)
 
     # Generating a tensorflow dataset
     train_ds = df_to_dataset(train, label)
+    val_ds = df_to_dataset(val, label)
     test_ds = df_to_dataset(test, label)
 
     # Building the model
@@ -62,7 +129,8 @@ def train_dnn(train, test, label, features, layers, oversample="none"):
                   )
 
     # Training the Model
-    model.fit(train_ds, epochs=10, verbose=1)
+    es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+    model.fit(train_ds, epochs=30, callbacks=[es], validation_data=val_ds, verbose=1)
 
     # Getting predictions
     output = np.asarray([x[0] for x in model.predict(test_ds)])
@@ -136,7 +204,7 @@ def train_naive_hive(train, test, label, num_hive, train_network, **kwargs):
         print(f"Training network {x+1}...")
         preds = train_network(train, test, label, **kwargs)
         ballots.append(preds)
-        print(f"Network {x+1} completed.")
+        print(f"Network {x+1} completed.\n")
 
     # Counting votes
     predicted = []
@@ -176,20 +244,34 @@ def train_images(train, test, label, convert_func, img_size, tmp_dir, oversample
     if os.path.exists(tmp_dir):
         shutil.rmtree(tmp_dir)
 
+    X_train, X_val, y_train, y_val = train_test_split(
+        train.drop(label, axis=1),
+        train[[label]],
+        test_size=0.2,
+        random_state=42,
+        stratify=train[label]
+    )
+
+    train = pd.merge(X_train, y_train, left_index=True, right_index=True)
+    val = pd.merge(X_val, y_val, left_index=True, right_index=True)
+
     featuredf = train.drop([label], axis=1)
     # Oversampling the training set
     train = oversample_data(train, label, oversample)
 
     # Generating images
     convert_func(train, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmp_dir, 'train'))
+    convert_func(val, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmp_dir, 'val'))
     convert_func(test, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmp_dir, 'test'))
 
     # Generating tensorflow dataset
     train_ds = image_to_dataset(os.path.join(tmp_dir, 'train'), img_size)
+    val_ds = image_to_dataset(os.path.join(tmp_dir, 'val'), img_size)
     test_ds = image_to_dataset(os.path.join(tmp_dir, 'test'), img_size)
 
     AUTOTUNE = tf.data.AUTOTUNE
     train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
+    val_ds = val_ds.prefetch(buffer_size=AUTOTUNE)
     test_ds = test_ds.prefetch(buffer_size=AUTOTUNE)
 
     # Building the model
@@ -227,8 +309,8 @@ def train_images(train, test, label, convert_func, img_size, tmp_dir, oversample
                   )
 
     # Training the Model
-    es = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
-    model.fit(train_ds, epochs=20, callbacks=[es], verbose=1)
+    es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+    model.fit(train_ds, epochs=20, callbacks=[es], validation_data=val_ds, verbose=1)
 
     # Getting predictions
     output = np.asarray([x[0] for x in model.predict(test_ds)])
@@ -256,7 +338,7 @@ def train_kfold(train_set, label, num_fold, train_func, **kwargs):
     :returns: dictionary of metrics.
     :rtype: dict['ACCURACY'|'SENSITIVITY'|'SPECIFICITY']['ALL'|'MEAN'|'STD']
 
-    .. todo:: The function implicitly assumes that the label column only has values "INCREASED RISK" or "REDUCED RISK".
+    ..todo:: This only supports binary classification.
     """
 
     # Arrays for metrics
@@ -266,17 +348,22 @@ def train_kfold(train_set, label, num_fold, train_func, **kwargs):
 
     # Build K folds
     kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
+    fold_no = 1
     for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
         train = train_set.iloc[train_idx]
         test = train_set.iloc[val_idx]
 
+        print(f"Starting fold {fold_no}...")
         # Train model
         predicted = train_func(train, test, label, **kwargs)
-        accuracy, sensitivity, specificity = get_metrics(predicted, np.where(test[label].values == "INCREASED RISK", 1, 0))
+        accuracy, sensitivity, specificity = get_metrics(predicted, convert_labels(test[label]))
 
         acc_per_fold.append(accuracy)
         sens_per_fold.append(sensitivity)
         spec_per_fold.append(specificity)
+
+        print(f"Fold {fold_no} completed.\n")
+        fold_no += 1
 
     metrics = {
         'ACCURACY': {
