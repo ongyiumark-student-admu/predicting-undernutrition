@@ -43,6 +43,7 @@
 <li><a class="reference internal" href="#predunder-package">predunder package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-src.predunder.functions">predunder.functions module</a><ul>
+<li><a class="reference internal" href="#src.predunder.functions.convert_labels"><code class="docutils literal notranslate"><span class="pre">convert_labels()</span></code></a></li>
 <li><a class="reference internal" href="#src.predunder.functions.df_to_dataset"><code class="docutils literal notranslate"><span class="pre">df_to_dataset()</span></code></a></li>
 <li><a class="reference internal" href="#src.predunder.functions.df_to_image"><code class="docutils literal notranslate"><span class="pre">df_to_image()</span></code></a></li>
 <li><a class="reference internal" href="#src.predunder.functions.df_to_nparray"><code class="docutils literal notranslate"><span class="pre">df_to_nparray()</span></code></a></li>
@@ -61,6 +62,8 @@
 <li><a class="reference internal" href="#src.predunder.training.train_images"><code class="docutils literal notranslate"><span class="pre">train_images()</span></code></a></li>
 <li><a class="reference internal" href="#src.predunder.training.train_kfold"><code class="docutils literal notranslate"><span class="pre">train_kfold()</span></code></a></li>
 <li><a class="reference internal" href="#src.predunder.training.train_naive_hive"><code class="docutils literal notranslate"><span class="pre">train_naive_hive()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.training.train_random_forest"><code class="docutils literal notranslate"><span class="pre">train_random_forest()</span></code></a></li>
+<li><a class="reference internal" href="#src.predunder.training.train_xgboost"><code class="docutils literal notranslate"><span class="pre">train_xgboost()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.predunder">Module contents</a></li>
@@ -104,6 +107,23 @@
 <section id="module-src.predunder.functions">
 <span id="predunder-functions-module"></span><h2>predunder.functions module<a class="headerlink" href="#module-src.predunder.functions" title="Permalink to this heading"></a></h2>
 <dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.functions.convert_labels">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">convert_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#convert_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.convert_labels" title="Permalink to this definition"></a></dt>
+<dd><p>Converts labels to ordinal numbers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>labels</strong> (<em>numpy.ndarray</em><em>[</em><em>str</em><em>]</em>) – array of labels for supervised learning</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>converted array of labels</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy.ndarray[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="src.predunder.functions.df_to_dataset">
 <span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">df_to_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#df_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.df_to_dataset" title="Permalink to this definition"></a></dt>
 <dd><p>Convert a Pandas DataFrame into a Tensorflow Dataset.</p>
@@ -127,10 +147,6 @@
 <p class="admonition-title">Note</p>
 <p>The dataframe is required to have this as one of its columns.</p>
 </div>
-<div class="admonition-todo admonition" id="id1">
-<p class="admonition-title">Todo</p>
-<p>The function implicitly assumes that the label column only has values “INCREASED RISK” or “REDUCED RISK”.</p>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -149,7 +165,7 @@
 </ul>
 </dd>
 </dl>
-<div class="admonition-todo admonition" id="id2">
+<div class="admonition-todo admonition" id="id1">
 <p class="admonition-title">Todo</p>
 <p>Categorical variables are hard-coded.</p>
 </div>
@@ -177,7 +193,7 @@
 <p class="admonition-title">Note</p>
 <p>The dataframe is required to have this as one of its columns.</p>
 </div>
-<div class="admonition-todo admonition" id="id3">
+<div class="admonition-todo admonition" id="id2">
 <p class="admonition-title">Todo</p>
 <p>This is currently not being used anywhere.</p>
 </div>
@@ -201,9 +217,13 @@
 <dd class="field-odd"><p>(float, float, float)</p>
 </dd>
 </dl>
-<div class="admonition-todo admonition" id="id4">
+<div class="admonition-todo admonition" id="id3">
 <p class="admonition-title">Todo</p>
 <p>This currently does not have Cohen’s Kappa.</p>
+</div>
+<div class="admonition-todo admonition" id="id4">
+<p class="admonition-title">Todo</p>
+<p>This only supports binary classification.</p>
 </div>
 </dd></dl>
 
@@ -233,11 +253,15 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="src.predunder.functions.kfold_metrics_to_df">
-<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">kfold_metrics_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#kfold_metrics_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.kfold_metrics_to_df" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">src.predunder.functions.</span></span><span class="sig-name descname"><span class="pre">kfold_metrics_to_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_all</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_stdev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/functions.html#kfold_metrics_to_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.functions.kfold_metrics_to_df" title="Permalink to this definition"></a></dt>
 <dd><p>Convert a k-fold metrics dictionary into a Pandas DataFrame row for analysis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>metrics</strong> (<em>dict</em>) – dictionary of metrics from predunder.training.train_kfold(..)</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metrics</strong> (<em>dict</em>) – dictionary of metrics from predunder.training.train_kfold(..)</p></li>
+<li><p><strong>include_all</strong> (<em>bool</em><em>, </em><em>optional</em>) – includes a list of all the metrics per fold</p></li>
+<li><p><strong>include_stdev</strong> (<em>bool</em><em>, </em><em>optional</em>) – includes the standard devation of metrics across folds</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>DataFrame with a single row</p>
@@ -324,6 +348,10 @@
 <p class="admonition-title">Todo</p>
 <p>Build custom evaluation functions to get the model predictions with Tensorflow.</p>
 </div>
+<div class="admonition-todo admonition" id="id7">
+<p class="admonition-title">Todo</p>
+<p>This only supports binary classification.</p>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -350,7 +378,7 @@
 <dd class="field-odd"><p>numpy.array[int]</p>
 </dd>
 </dl>
-<div class="admonition-todo admonition" id="id7">
+<div class="admonition-todo admonition" id="id8">
 <p class="admonition-title">Todo</p>
 <p>Build custom evaluation functions to get the model predictions with Tensorflow, and implement early stopping from validation loss.</p>
 </div>
@@ -378,10 +406,7 @@
 <dd class="field-odd"><p>dict[‘ACCURACY’|’SENSITIVITY’|’SPECIFICITY’][‘ALL’|’MEAN’|’STD’]</p>
 </dd>
 </dl>
-<div class="admonition-todo admonition" id="id10">
-<p class="admonition-title">Todo</p>
-<p>The function implicitly assumes that the label column only has values “INCREASED RISK” or “REDUCED RISK”.</p>
-</div>
+<p>..todo:: This only supports binary classification.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -414,6 +439,50 @@
 <p class="admonition-title">Todo</p>
 <p>Implement option for smarter voting.</p>
 </div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.training.train_random_forest">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.training.</span></span><span class="sig-name descname"><span class="pre">train_random_forest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/training.html#train_random_forest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.training.train_random_forest" title="Permalink to this definition"></a></dt>
+<dd><p>Train a random forest model and make predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train</strong> (<em>pandas.DataFrame</em>) – DataFrame of the training set</p></li>
+<li><p><strong>test</strong> (<em>pandas.DataFrame</em>) – DataFrame of the testing set</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>oversample</strong> (<em>str</em><em>, </em><em>optional</em>) – oversampling algorithm to be applied (“none”, “smote”, “adasyn”, “borderline”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>array of class predictions</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.predunder.training.train_xgboost">
+<span class="sig-prename descclassname"><span class="pre">src.predunder.training.</span></span><span class="sig-name descname"><span class="pre">train_xgboost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oversample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/predunder/training.html#train_xgboost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.predunder.training.train_xgboost" title="Permalink to this definition"></a></dt>
+<dd><p>Train an XGBoost model and make predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train</strong> (<em>pandas.DataFrame</em>) – DataFrame of the training set</p></li>
+<li><p><strong>test</strong> (<em>pandas.DataFrame</em>) – DataFrame of the testing set</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – name of the target column for supervised learning</p></li>
+<li><p><strong>oversample</strong> (<em>str</em><em>, </em><em>optional</em>) – oversampling algorithm to be applied (“none”, “smote”, “adasyn”, “borderline”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>array of class predictions</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray[int]</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
