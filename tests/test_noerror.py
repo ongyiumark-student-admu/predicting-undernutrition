@@ -1,6 +1,4 @@
 import numpy as np
-import os
-from shutil import rmtree
 
 from predunder.functions import df_to_dataset, df_to_nparray, \
     get_metrics, oversample_data, kfold_metrics_to_df
