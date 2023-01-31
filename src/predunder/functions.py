@@ -1,11 +1,8 @@
 # Importing libraries
-import os
-
 import imblearn as imb
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from PIL import Image, ImageDraw
 
 
 def convert_labels(labels):
@@ -69,97 +66,6 @@ def df_to_nparray(dataframe, label):
     y = dataframe[label].to_numpy()
 
     return (X, y)
-
-
-def df_to_image(dataframe, mean_df, std_df, label, img_size, out_dir):
-    """Convert a Pandas DataFrame into a directory of images without regard for pixel position.
-
-    :param dataframe: DataFrame to convert into images
-    :type dataframe: pandas.DataFrame
-    :param mean_df: DataFrame of column means for normalization
-    :type mean_df: pandas.DataFrame
-    :param std_df: DataFrame of column standard deviations for normalization
-    :type std_df: pandas.DataFrame
-    :param label: name of the target column for supervised learning
-    :type label: str
-    :param img_size: dimensions of the resulting images
-    :type img_size: (int, int)
-    :param out_dir: output directory where the images will be stored
-    :type out_dir: str
-
-    .. todo:: Categorical variables are hard-coded.
-    """
-
-    def sigmoid(x):
-        return 1/(1+np.exp(-x))
-
-    features = dataframe.drop([label], axis=1).columns.tolist()
-
-    # Normalize variables
-    normalize = ['AGE', 'HHID_count', 'HH_AGE', 'FOOD_EXPENSE_WEEKLY',
-                 'NON-FOOD_EXPENSE_WEEKLY', 'YoungBoys', 'YoungGirls',
-                 'AverageMonthlyIncome', 'FOOD_EXPENSE_WEEKLY_pc', 'NON-FOOD_EXPENSE_WEEKLY_pc',
-                 'AverageMonthlyIncome_pc'
-                 ]
-
-    df_normal = dataframe.copy()
-    for col in normalize:
-        df_normal[col] = sigmoid((df_normal[col]-mean_df[col])/std_df[col])
-
-    df_normal['CHILD_SEX'] = df_normal['CHILD_SEX']/1
-    df_normal['IDD_SCORE'] = df_normal['IDD_SCORE']/12
-    df_normal['HDD_SCORE'] = df_normal['HDD_SCORE']/12
-    df_normal['FOOD_INSECURITY'] = (df_normal['FOOD_INSECURITY']-1)/3
-    df_normal['BEN_4PS'] = df_normal['BEN_4PS']/2
-    df_normal['AREA_TYPE'] = df_normal['AREA_TYPE']/1
-
-    df_normal[label] = convert_labels(df_normal[label].values)
-
-    # Generate images
-    n = len(features)
-    w, h = img_size
-    nw = n//4
-    nh = (n+nw-1)//nw
-
-    for index, row in df_normal.iterrows():
-        img = Image.new("RGB", img_size)
-        for i in range(0, nh):
-            for j in range(0, nw):
-                idx = i*nw+j
-                if idx >= n:
-                    break
-                val = int(sigmoid(row[features[idx]])*255)
-
-                r = ImageDraw.Draw(img)
-                x = i*(h//nh)
-                y = j*(w//nw)
-                r.rectangle([(y, x), (y+w//nw, x+h//nh)], fill=(val, val, val))
-
-        subdir = os.path.join(out_dir, str(row[label]))
-        if not os.path.exists(subdir):
-            os.makedirs(subdir)
-        img.save(os.path.join(subdir, f'{index}.png'))
-
-
-def image_to_dataset(dir, img_size):
-    """Create a Tensorflow Dataset from a directory of images.
-
-    :param dir: directory of the images
-    :type dir: str
-    :param img_size: dimension of the images
-    :type img_size: (int, int)
-    :returns: Tensorflow Dataset based on the images
-    :rtype: tensorflow.data.Dataset
-
-    .. todo:: The batch size is fixed to 32.
-    """
-
-    dataset = tf.keras.utils.image_dataset_from_directory(
-        dir,
-        shuffle=True,
-        batch_size=32,
-        image_size=img_size)
-    return dataset
 
 
 def get_metrics(predicted, actual):
