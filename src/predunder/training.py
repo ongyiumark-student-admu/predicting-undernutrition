@@ -1,15 +1,11 @@
 # Importing libraries
-import os
-import shutil
-
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
-from predunder.functions import (convert_labels, df_to_nparray, df_to_dataset, get_metrics,
-                                 image_to_dataset, oversample_data)
+from predunder.functions import (convert_labels, df_to_nparray, df_to_dataset, get_metrics, oversample_data)
 
 
 def train_random_forest(train, test, label, oversample="none"):
@@ -139,6 +135,9 @@ def train_dnn(train, test, label, features, layers, oversample="none"):
     return predicted
 
 
+# def train_rfnn(train, test, label, oversample="none"):
+
+
 # def train_naive_hive_sp(train, test, label, num_hive, train_network, **kwargs):
 #     """
 #         Trains a random hive by naively training neural networks of the same architecture on the whole training set.
@@ -213,114 +212,6 @@ def train_naive_hive(train, test, label, num_hive, train_network, **kwargs):
         predicted.append(1 if 2*votes >= num_hive else 0)
 
     return np.asarray(predicted)
-
-
-def train_images(train, test, label, convert_func, img_size, tmp_dir, oversample="none", base_model="mobilenetv2", learning_rate=0.0001):
-    """Converts tabular data into images and train a classifier with transfer learning.
-
-    :param train: DataFrame of the training set
-    :type train: pandas.DataFrame
-    :param test: DataFrame of the testing set
-    :type test: pandas.DataFrame
-    :param label: name of the target column for supervised learning
-    :type label: str
-    :param convert_func: table to image converter function
-    :type convert_func: Callable[.., None]
-    :param img_size: dimension of the resulting images
-    :type img_size: (int, int)
-    :param tmp_dir: output directory where the images will be temporarily stored
-    :type tmp_dir: str
-    :param base_model: base model for transfer learning from Keras_
-    :type base_model: str, optional
-    :param learning_rate: learning rate for the neural network
-    :type learning_rate: float, optional
-    :returns: array of class predictions
-    :rtype: numpy.array[int]
-
-    .. _Keras: https://keras.io/api/applications/
-    .. todo:: Build custom evaluation functions to get the model predictions with Tensorflow, and implement early stopping from validation loss.
-    """
-    # Deleting directory if exists
-    if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)
-
-    X_train, X_val, y_train, y_val = train_test_split(
-        train.drop(label, axis=1),
-        train[[label]],
-        test_size=0.2,
-        random_state=42,
-        stratify=train[label]
-    )
-
-    train = pd.merge(X_train, y_train, left_index=True, right_index=True)
-    val = pd.merge(X_val, y_val, left_index=True, right_index=True)
-
-    featuredf = train.drop([label], axis=1)
-    # Oversampling the training set
-    train = oversample_data(train, label, oversample)
-
-    # Generating images
-    convert_func(train, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmp_dir, 'train'))
-    convert_func(val, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmp_dir, 'val'))
-    convert_func(test, featuredf.mean(), featuredf.std(), label, img_size, os.path.join(tmp_dir, 'test'))
-
-    # Generating tensorflow dataset
-    train_ds = image_to_dataset(os.path.join(tmp_dir, 'train'), img_size)
-    val_ds = image_to_dataset(os.path.join(tmp_dir, 'val'), img_size)
-    test_ds = image_to_dataset(os.path.join(tmp_dir, 'test'), img_size)
-
-    AUTOTUNE = tf.data.AUTOTUNE
-    train_ds = train_ds.prefetch(buffer_size=AUTOTUNE)
-    val_ds = val_ds.prefetch(buffer_size=AUTOTUNE)
-    test_ds = test_ds.prefetch(buffer_size=AUTOTUNE)
-
-    # Building the model
-    img_shape = img_size+(3,)
-    if base_model == 'xception':
-        bm = tf.keras.applications.Xception(input_shape=img_shape, include_top=False, weights='imagenet')
-        preprocess = tf.keras.applications.xception.preprocess_input
-    elif base_model == 'resnet50v2':
-        bm = tf.keras.applications.ResNet50V2(input_shape=img_shape, include_top=False, weights='imagenet')
-        preprocess = tf.keras.applications.resnet_v2.preprocess_input
-    elif base_model == 'mobilenetv2':
-        bm = tf.keras.applications.MobileNetV2(input_shape=img_shape, include_top=False, weights='imagenet')
-        preprocess = tf.keras.applications.mobilenet_v2.preprocess_input
-    elif base_model == 'efficientnetv2s':
-        bm = tf.keras.applications.EfficientNetV2S(input_shape=img_shape, include_top=False, weights='imagenet')
-        preprocess = tf.keras.applications.efficientnet_v2.preprocess_input
-
-    inputs = tf.keras.Input(shape=img_shape)
-    x = preprocess(inputs)
-    x = bm(x, training=False)
-    x = tf.keras.layers.GlobalAveragePooling2D()(x)
-    x = tf.keras.layers.Dropout(0.2)(x)
-    output = tf.keras.layers.Dense(1, activation='sigmoid')(x)
-
-    model = tf.keras.Model(inputs, output)
-
-    # Compiling the model
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-                  loss=tf.keras.losses.BinaryCrossentropy(),
-                  metrics=['accuracy',
-                           tf.keras.metrics.TruePositives(),
-                           tf.keras.metrics.TrueNegatives(),
-                           tf.keras.metrics.FalsePositives(),
-                           tf.keras.metrics.FalseNegatives()],
-                  )
-
-    # Training the Model
-    es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
-    model.fit(train_ds, epochs=20, callbacks=[es], validation_data=val_ds, verbose=1)
-
-    # Getting predictions
-    output = np.asarray([x[0] for x in model.predict(test_ds)])
-    predicted = np.where(output >= 0.5, 1, 0)
-
-    # Deleting temporary image folder
-    if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)
-
-    return predicted
 
 
 def train_kfold(train_set, label, num_fold, train_func, **kwargs):
