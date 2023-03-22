@@ -1,8 +1,42 @@
 # Importing libraries
 import pandas as pd
 
+from sklearn.model_selection import ParameterGrid
 from predunder.functions import kfold_metrics_to_df
 from predunder.training import train_dnn, train_kfold
+
+
+def tune_model(train, label, folds, train_func, param_grid):
+    """Performs grid search cross validation on Cohen's Kappa
+
+    :param train: DataFrame of the training set
+    :type train: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param fold: number of folds for k-fold cross-validation
+    :type fold: int
+    :param train_func: training function of the model being validated
+    :type train_func: Callable[..., (float,float,float)]
+    :param param_grid: grid of parameters to hypertune with
+    :type param_grid: dict[str, list]
+    :returns: best parameters
+    :rtype: dict
+    """
+
+    best_score = 0
+    for i, params in enumerate(list(ParameterGrid(param_grid))):
+        print(f"Starting parameters {i}...")
+        metrics = train_kfold(train, label, folds, train_func, **params)
+        score = metrics['KAPPA']['MEAN']
+
+        if best_score <= score:
+            best_score = score
+            best_params = params
+
+        print(f"Completed parameters {i}: {score}.")
+        print()
+
+    return best_params
 
 
 def tune_dnn(train, label, folds, max_nodes, oversample="none"):

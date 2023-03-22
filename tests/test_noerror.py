@@ -2,7 +2,7 @@ import numpy as np
 
 from predunder.functions import df_to_dataset, df_to_nparray, \
     get_metrics, oversample_data, kfold_metrics_to_df
-from predunder.training import train_dnn, train_naive_hive, train_kfold
+from predunder.training import train_dnn, train_kfold
 from predunder.hypertuning import tune_dnn
 
 
@@ -14,29 +14,6 @@ def test_df_to_dataset(df_sample):
 def test_df_to_nparray(df_sample):
     df, label = df_sample
     df_to_nparray(df, label)
-
-
-# def test_df_to_image(df_sample):
-#     df, label = df_sample
-#     dir = "image-data/basic-sample"
-#     img_size = (160, 160)
-#     if os.path.exists(dir):
-#         rmtree(dir)
-
-#     featuredf = df.drop([label], axis=1)
-#     df_to_image(df, featuredf.mean(), featuredf.std(), label, img_size, dir)
-
-
-# def test_image_to_dataset(df_sample):
-#     df, label = df_sample
-#     dir = "image-data/basic-sample"
-#     if os.path.exists(dir):
-#         rmtree(dir)
-#     img_size = (160, 160)
-
-#     featuredf = df.drop([label], axis=1)
-#     df_to_image(df, featuredf.mean(), featuredf.std(), label, img_size, dir)
-#     image_to_dataset(dir, img_size)
 
 
 def test_get_metrics():
@@ -71,11 +48,6 @@ def test_train_dnn_adasyn(df_sample):
 def test_train_dnn_borderline(df_sample):
     df, label = df_sample
     train_dnn(df, df, label, df.drop([label], axis=1).columns, [6], "borderline")
-
-
-def test_naive_hive(df_sample):
-    df, label = df_sample
-    train_naive_hive(df, df, label, 2, train_dnn, features=df.drop([label], axis=1).columns, layers=[6])
 
 
 def test_train_kfold(df_sample):
