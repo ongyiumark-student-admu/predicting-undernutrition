@@ -90,7 +90,11 @@ def get_metrics(predicted, actual):
     sensitivity = tp/(tp+fn)
     specificity = tn/(tn+fp)
 
-    return accuracy, sensitivity, specificity
+    po = (tp+tn)/(tp+tn+fp+fn)
+    pe = ((tp+fn)*(tp+fp) + (fp+tn)*(fn+tn))/(tp+tn+fp+fn)**2
+    kappa = (po-pe)/(1-pe)
+
+    return accuracy, sensitivity, specificity, kappa
 
 
 def kfold_metrics_to_df(metrics, include_all=False, include_stdev=True):

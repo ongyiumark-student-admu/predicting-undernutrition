@@ -4,11 +4,15 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import normalize
+from xgboost import XGBClassifier
+from nnrf import NNRF
+from nnrf import ml
 
 from predunder.functions import (convert_labels, df_to_nparray, df_to_dataset, get_metrics, oversample_data)
 
 
-def train_random_forest(train, test, label, oversample="none"):
+def train_random_forest(train, test, label, oversample="none", to_normalize=False, **kwargs):
     """Train a random forest model and make predictions.
 
     :param train: DataFrame of the training set
@@ -19,22 +23,29 @@ def train_random_forest(train, test, label, oversample="none"):
     :type label: str
     :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
     :type oversample: str, optional
+    :param to_normalize: normalize features
+    :type to_normalize: bool, optional
     :returns: array of class predictions
     :rtype: np.ndarray[int]
     """
     # Oversampling the training set
     train = oversample_data(train, label, oversample)
 
-    clf = RandomForestClassifier(max_depth=2, random_state=42)
+    clf = RandomForestClassifier(random_state=42, **kwargs)
     X_train, y_train = df_to_nparray(train, label)
     X_test, y_test = df_to_nparray(test, label)
+
+    # normalize features
+    if to_normalize:
+        X_train = normalize(X_train)
+        X_test = normalize(X_test)
 
     clf.fit(X_train, convert_labels(y_train))
     predicted = clf.predict(X_test)
     return predicted
 
 
-def train_xgboost(train, test, label, oversample="none"):
+def train_xgboost(train, test, label, oversample="none", to_normalize=False, **kwargs):
     """Train an XGBoost model and make predictions.
 
     :param train: DataFrame of the training set
@@ -45,15 +56,62 @@ def train_xgboost(train, test, label, oversample="none"):
     :type label: str
     :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
     :type oversample: str, optional
+    :param to_normalize: normalize features
+    :type to_normalize: bool, optional
     :returns: array of class predictions
     :rtype: np.ndarray[int]
     """
     # Oversampling the training set
     train = oversample_data(train, label, oversample)
 
-    clf = RandomForestClassifier(max_depth=2, random_state=42)
+    clf = XGBClassifier(random_state=42, objective='binary:logistic', **kwargs)
     X_train, y_train = df_to_nparray(train, label)
     X_test, y_test = df_to_nparray(test, label)
+
+    # normalize features
+    if to_normalize:
+        X_train = normalize(X_train)
+        X_test = normalize(X_test)
+
+    clf.fit(X_train, convert_labels(y_train))
+    predicted = clf.predict(X_test)
+    return predicted
+
+
+def train_nnrf(train, test, label, oversample="none", to_normalize=False, learning_rate=0.1, reg_factor=0, **kwargs):
+    """Train an NNRF model and make predictions.
+
+    :param train: DataFrame of the training set
+    :type train: pandas.DataFrame
+    :param test: DataFrame of the testing set
+    :type test: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
+    :type oversample: str, optional
+    :param to_normalize: normalize features
+    :type to_normalize: bool, optional
+    :param learning_rate: learning rate of optimizer
+    :type learning_rate: float, optional
+    :param reg_factor: L2 regularization factor
+    :type reg_factor: float, optional
+    :returns: array of class predictions
+    :rtype: np.ndarray[int]
+    """
+    # Oversampling the training set
+    train = oversample_data(train, label, oversample)
+
+    o = ml.optimizer.Adam(alpha=learning_rate)
+    r = ml.regularizer.L2(c=reg_factor)
+
+    clf = NNRF(random_state=42, loss='cross-entropy', optimizer=o, regularize=r, **kwargs)
+    X_train, y_train = df_to_nparray(train, label)
+    X_test, y_test = df_to_nparray(test, label)
+
+    # normalize features
+    if to_normalize:
+        X_train = normalize(X_train)
+        X_test = normalize(X_test)
 
     clf.fit(X_train, convert_labels(y_train))
     predicted = clf.predict(X_test)
@@ -135,85 +193,6 @@ def train_dnn(train, test, label, features, layers, oversample="none"):
     return predicted
 
 
-# def train_rfnn(train, test, label, oversample="none"):
-
-
-# def train_naive_hive_sp(train, test, label, num_hive, train_network, **kwargs):
-#     """
-#         Trains a random hive by naively training neural networks of the same architecture on the whole training set.
-
-#         :param train: pandas dataframe of the training set
-#         :param test: pandas dataframe of the testing set
-#         :param label: name of the target column for supervised learning
-#         :param num_hive: number of networks in the hive
-#         :param train_network: training function for each network
-#         :param **kwargs: other keyword arguments for the training function
-#         :return predicted: numpy array of class predictions
-#     """
-
-#     # Training networks
-#     ballots = []
-#     ballot_weights = []
-#     for x in range(num_hive):
-#         print(f"Training network {x+1}...")
-#         preds = train_network(train, test, label, **kwargs)
-#         sensitivity, specificity = get_metrics(preds, np.where(test[label].values == 'INCREASED RISK', 1, 0))[1:]
-#         weights = [sensitivity if p == 0 else specificity for p in preds]
-#         ballots.append(preds)
-#         ballot_weights.append(weights)
-#         print(f"Network {x+1} completed.")
-
-#     # Counting votes with smart voting
-#     predicted = []
-#     for p, w in zip(zip(*ballots), zip(*ballot_weights)):
-#         cnt0, cnt1 = (0, 0)
-#         for vote, weight in zip(p, w):
-#             if vote == 0:
-#                 cnt0 += 1-(weight <= 0.2)
-#             else:
-#                 cnt1 += 1-(weight <= 0.2)
-#         predicted.append(1 if cnt1 >= cnt0 else 0)
-
-#     return np.asarray(predicted)
-
-
-def train_naive_hive(train, test, label, num_hive, train_network, **kwargs):
-    """Train a random hive with neural networks of the same architecture on the whole training set.
-
-    :param train: DataFrame of the training set
-    :type train: pandas.DataFrame
-    :param test: DataFrame of the testing set
-    :type test: pandas.DataFrame
-    :param label: name of the target column for supervised learning
-    :type label: str
-    :param num_hive: number of networks in the hive
-    :type num_hive: int
-    :param train_network: training function for each network
-    :type: Callable[.., numpy.ndarray[int]]
-    :param **kwargs: other keyword arguments for the training function
-    :returns: array of class predictions
-    :rtype: numpy.ndarray[int]
-
-    .. todo:: Implement option for smarter voting.
-    """
-
-    # Training networks
-    ballots = []
-    for x in range(num_hive):
-        print(f"Training network {x+1}...")
-        preds = train_network(train, test, label, **kwargs)
-        ballots.append(preds)
-        print(f"Network {x+1} completed.\n")
-
-    # Counting votes
-    predicted = []
-    for p in zip(*ballots):
-        votes = sum(p)
-        predicted.append(1 if 2*votes >= num_hive else 0)
-
-    return np.asarray(predicted)
-
-
 def train_kfold(train_set, label, num_fold, train_func, **kwargs):
     """Validate a model with stratified k-fold cross validation.
 
@@ -224,10 +203,10 @@ def train_kfold(train_set, label, num_fold, train_func, **kwargs):
     :param num_fold: number of folds
     :type num_fold: int
     :param train_func: training function of the model being validated
-    :type train_func: Callable[.., (flaot,flaot,flaot)]
+    :type train_func: Callable[..., (float,float,float)]
     :param **kwargs: other keyword arguments for the training function
     :returns: dictionary of metrics.
-    :rtype: dict['ACCURACY'|'SENSITIVITY'|'SPECIFICITY']['ALL'|'MEAN'|'STD']
+    :rtype: dict['ACCURACY'|'SENSITIVITY'|'SPECIFICITY' | 'KAPPA']['ALL'|'MEAN'|'STD']
 
     ..todo:: This only supports binary classification.
     """
@@ -236,6 +215,7 @@ def train_kfold(train_set, label, num_fold, train_func, **kwargs):
     acc_per_fold = []
     sens_per_fold = []
     spec_per_fold = []
+    kappa_per_fold = []
 
     # Build K folds
     kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
@@ -247,11 +227,12 @@ def train_kfold(train_set, label, num_fold, train_func, **kwargs):
         print(f"Starting fold {fold_no}...")
         # Train model
         predicted = train_func(train, test, label, **kwargs)
-        accuracy, sensitivity, specificity = get_metrics(predicted, convert_labels(test[label]))
+        accuracy, sensitivity, specificity, kappa = get_metrics(predicted, convert_labels(test[label]))
 
         acc_per_fold.append(accuracy)
         sens_per_fold.append(sensitivity)
         spec_per_fold.append(specificity)
+        kappa_per_fold.append(kappa)
 
         print(f"Fold {fold_no} completed.\n")
         fold_no += 1
@@ -271,6 +252,11 @@ def train_kfold(train_set, label, num_fold, train_func, **kwargs):
             'ALL': spec_per_fold,
             'MEAN': np.mean(spec_per_fold),
             'STDEV': np.std(spec_per_fold)
+        },
+        'KAPPA': {
+            'ALL': kappa_per_fold,
+            'MEAN': np.mean(kappa_per_fold),
+            'STDEV': np.std(kappa_per_fold)
         }
     }
     return metrics
