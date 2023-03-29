@@ -124,8 +124,33 @@ def kfold_metrics_to_df(metrics, include_all=False, include_stdev=True):
     return dfrow
 
 
+def convert_df_col_type(dataframe, columns, new_types="int64"):
+    """Convert the specified columns in a Pandas DataFrame into the desired datatypes.
+
+    :param dataframe: DataFrame to be modified
+    :type dataframe: pandas.DataFrame
+    :param columns: list of names of columns to be converted
+    :type columns: list
+    :param new_types: list of desired datatypes or single desired datatype
+    :type new_types: list or str, optional
+    :returns: DataFrame with converted columns
+    :rtype: pandas.DataFrame
+
+    .. todo:: Add support for column indices instead of names, maybe.
+    .. todo:: Add support for dictionary input that combines columns and new_types.
+    """
+
+    if type(new_types) == str:
+        new_types = [new_types]*len(columns)
+
+    dtype = dict(zip(columns, new_types))
+    converted_dataframe = dataframe.astype(dtype)
+
+    return converted_dataframe
+
+
 def oversample_data(train_set, label, oversample="none"):
-    """Perform oversampling over the minority class using the specific technique.
+    """Perform oversampling over the minority class using the specified technique.
 
     :param train_set: DataFrame of the training set
     :type train_set: pandas.DataFrame
@@ -137,15 +162,12 @@ def oversample_data(train_set, label, oversample="none"):
     :rtype: pandas.DataFrame
     """
 
-    # Returns origin train set if no oversampling is specified
     if oversample == "none":
         return train_set
 
-    # Separating dataset into features and labels
     x_train = train_set.drop([label], axis=1)
     y_train = train_set[[label]]
 
-    # Applying specified oversampling techinque
     if oversample == "smote":
         ovs = imb.over_sampling.SMOTE()
     elif oversample == "adasyn":

@@ -1,7 +1,7 @@
 import numpy as np
 
 from predunder.functions import df_to_dataset, df_to_nparray, \
-    get_metrics, oversample_data, kfold_metrics_to_df
+    get_metrics, oversample_data, kfold_metrics_to_df, convert_df_col_type
 from predunder.training import train_dnn, train_kfold
 from predunder.hypertuning import tune_dnn
 
@@ -64,3 +64,10 @@ def test_kfold_metrics_to_df(df_sample):
 def test_tune_dnn(df_sample):
     df, label = df_sample
     tune_dnn(df, label, 2, 1)
+
+
+def test_convert_df_col_type(df_sample):
+    df, label = df_sample
+    columns = list(df.columns)
+    new_types = list(df.dtypes)
+    convert_df_col_type(df, columns, new_types)
