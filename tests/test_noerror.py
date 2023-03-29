@@ -1,7 +1,7 @@
 import numpy as np
 
 from predunder.functions import df_to_dataset, df_to_nparray, \
-    get_metrics, oversample_data, kfold_metrics_to_df, convert_df_col_type
+    get_metrics, oversample_data, undersample_data, kfold_metrics_to_df, convert_df_col_type
 from predunder.training import train_dnn, train_kfold
 from predunder.hypertuning import tune_dnn
 
@@ -28,6 +28,13 @@ def test_oversample_data(df_sample):
     oversample_data(df, label, "smote")
     oversample_data(df, label, "adasyn")
     oversample_data(df, label, "borderline")
+
+
+def test_undersample_data(df_sample):
+    df, label = df_sample
+    undersample_data(df, label)
+    undersample_data(df, label, "auto")
+    undersample_data(df, label, 1.00)
 
 
 def test_train_dnn(df_sample):

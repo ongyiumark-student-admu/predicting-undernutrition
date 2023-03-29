@@ -134,6 +134,7 @@ def convert_df_col_type(dataframe, columns, new_types="int64"):
     :type new_types: list or str, optional
     :returns: DataFrame with converted columns
     :rtype: pandas.DataFrame
+
     .. todo:: Add support for column indices instead of names, maybe.
     .. todo:: Add support for dictionary input that combines columns and new_types.
     """
@@ -158,6 +159,8 @@ def oversample_data(train_set, label, oversample="none"):
     :type oversample: str, optional
     :returns: DataFrame of training set with oversampled data
     :rtype: pandas.DataFrame
+
+    .. todo:: Add support for sampling_strategy parameter.
     """
 
     if oversample == "none":
@@ -173,6 +176,34 @@ def oversample_data(train_set, label, oversample="none"):
     elif oversample == "borderline":
         ovs = imb.over_sampling.BorderlineSMOTE()
     x_train, y_train = ovs.fit_resample(x_train, y_train)
+    train = pd.merge(x_train, y_train, left_index=True, right_index=True)
+
+    return train
+
+
+def undersample_data(train_set, label, undersample="none"):
+    """Perform oversampling over the minority class using the specific technique.
+
+    :param train_set: DataFrame of the training set
+    :type train_set: pandas.DataFrame
+    :param label: name of the target column for supervised learning
+    :type label: str
+    :param undersample: undersampling strategy to be applied
+    :type undersample: str or float, optional
+    :returns: DataFrame of training set with undersampled data
+    :rtype: pandas.DataFrame
+
+    .. todo:: Write better documentation.
+    """
+
+    if undersample == "none":
+        return train_set
+
+    x_train = train_set.drop([label], axis=1)
+    y_train = train_set[[label]]
+
+    unds = imb.under_sampling.RandomUnderSampler(sampling_strategy=undersample)
+    x_train, y_train = unds.fit_resample(x_train, y_train)
     train = pd.merge(x_train, y_train, left_index=True, right_index=True)
 
     return train
