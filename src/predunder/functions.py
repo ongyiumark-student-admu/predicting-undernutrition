@@ -123,6 +123,7 @@ def kfold_metrics_to_df(metrics, include_all=False, include_stdev=True):
 
     return dfrow
 
+
 def convert_df_col_type(dataframe, columns, new_types="int64"):
     """Convert the specified columns in a Pandas DataFrame into the desired datatypes.
     :param dataframe: DataFrame to be modified
