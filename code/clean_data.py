@@ -4,19 +4,32 @@ import os
 URBAN_SHEET = "Valenzuela_20201016_Feb"
 RURAL_SHEET = "ComVal_20200118_Oct"
 DATA_DIR = "../data/Data.xlsx"
-OUT_DIR = "../data/processed"
+OUT_DIR = "../cleaned-data"
 
 
 def clean_data(data, children_data, idx_str):
     X = pd.DataFrame()
-    INDIVIDUAL_VARIABLES = ['CHILD_SEX', 'IDD_SCORE', 'AGE']
-    INTEGER_VARIABLES = ['IDD_SCORE', 'AGE', 'HHID_count', 'HDD_SCORE']
+    y = pd.DataFrame()
 
+    INDIVIDUAL_VARIABLES = ['CHILD_SEX', 'IDD_SCORE', 'AGE']
     TARGET_VARIABLES = [
-        ('CARBS_PERCENT_AVE_ALL', 45, 65),
-        ('PROT_PERCENT_AVE_ALL', 10, 35),
-        ('FAT_PERCENT_AVE_ALL', 20, 35)
+        'ENERGY_%_ADEQ_ALL',
+        'IRON_%_ADEQ_ALL',
+        'VIT_A_%_ADEQ_ALL',
+        'PROTEIN_%_ADEQ_ALL',
+        'CARBS_PERCENT_AVE_ALL',
+        'PROT_PERCENT_AVE_ALL',
+        'FAT_PERCENT_AVE_ALL',
+        'PROTEIN_g_AVE_ALL',
+        'CALCIUM_mg_AVE_ALL',
+        'PHOSPHORUS_mg_AVE_ALL',
+        'IRON_mg_AVE_ALL',
+        'VIT_A_ug_RE_AVE_ALL',
+        'THIAMIN_mg_AVE_ALL',
+        'RIBOFLAVIN_mg_AVE_ALL',
+        'NIACIN_mg_NE_AVE_ALL'
     ]
+
     for idx, row in children_data.iterrows():
         new_row = dict()
 
@@ -46,16 +59,21 @@ def clean_data(data, children_data, idx_str):
         new_row['FOOD_EXPENSE_WEEKLY_pc'] = new_row['FOOD_EXPENSE_WEEKLY'] / new_row['HHID_count']
         new_row['NON-FOOD_EXPENSE_WEEKLY_pc'] = new_row['NON-FOOD_EXPENSE_WEEKLY'] / new_row['HHID_count']
 
-        for col, lb, ub in TARGET_VARIABLES:
-            new_row[col] = row[col]
+        target = dict()
+        target['idx'] = new_row['idx']
+        for col in TARGET_VARIABLES:
+            if col in row.index:
+                target[col] = row[col]
+            elif col.endswith("AVE_ALL"):
+                nutrient = col[:-7]
+                if nutrient == "PROT_PERCENT_":
+                    nutrient = "PROTEIN_PERCENT_"
+                target[col] = row[[nutrient + day for day in ['WKDAY1', 'WKDAY2', 'WKEND']]].mean()
 
         X = pd.concat([X, pd.DataFrame(new_row, index=[0])])
+        y = pd.concat([y, pd.DataFrame(target, index=[0])])
 
-    X.dropna(inplace=True)
-    for col in INTEGER_VARIABLES:
-        X[col] = X[col].astype(int)
-
-    return X
+    return X, y
 
 
 if __name__ == '__main__':
@@ -70,15 +88,17 @@ if __name__ == '__main__':
     print("Gathering child data completed.")
 
     print("Cleaning urban data...")
-    cleaned_urban = clean_data(data_urban, children_urban, "VZ")
+    X_urban, y_urban = clean_data(data_urban, children_urban, "VZ")
     print("Cleaning urban data completed.")
 
     print("Cleaning rural data...")
-    cleaned_rural = clean_data(data_rural, children_rural, "CV")
+    X_rural, y_rural = clean_data(data_rural, children_rural, "CV")
     print("Cleaning rural data completed.")
 
-    cleaned_data = pd.concat([cleaned_rural, cleaned_urban])
+    cleaned_X = pd.concat([X_rural, X_urban])
+    cleaned_y = pd.concat([y_rural, y_urban])
 
     print("Saving cleaned data...")
-    cleaned_data.to_csv(os.path.join(OUT_DIR, 'cleaned.csv'), index=False)
+    cleaned_X.to_csv(os.path.join(OUT_DIR, 'cleaned_X.csv'), index=False)
+    cleaned_X.to_csv(os.path.join(OUT_DIR, 'cleaned_y.csv'), index=False)
     print("Saved.")
