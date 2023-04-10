@@ -10,6 +10,7 @@ OUT_DIR = "../data/processed"
 def clean_data(data, children_data, idx_str):
     X = pd.DataFrame()
     INDIVIDUAL_VARIABLES = ['CHILD_SEX', 'IDD_SCORE', 'AGE']
+    INTEGER_VARIABLES = ['IDD_SCORE', 'AGE', 'HHID_count', 'HDD_SCORE']
 
     TARGET_VARIABLES = [
         ('CARBS_PERCENT_AVE_ALL', 45, 65),
@@ -49,19 +50,35 @@ def clean_data(data, children_data, idx_str):
             new_row[col] = row[col]
 
         X = pd.concat([X, pd.DataFrame(new_row, index=[0])])
-        X.dropna(inplace=True)
+
+    X.dropna(inplace=True)
+    for col in INTEGER_VARIABLES:
+        X[col] = X[col].astype(int)
+
     return X
 
 
 if __name__ == '__main__':
+    print("Reading raw data...")
     data_rural = pd.read_excel(DATA_DIR, sheet_name=RURAL_SHEET)
     data_urban = pd.read_excel(DATA_DIR, sheet_name=URBAN_SHEET)
+    print("Reading raw data completed.")
 
+    print("Gathering child data...")
     children_urban = data_urban.query("FR_Child == 1")
     children_rural = data_rural.query("FR_Child == 1")
+    print("Gathering child data completed.")
 
+    print("Cleaning urban data...")
     cleaned_urban = clean_data(data_urban, children_urban, "VZ")
+    print("Cleaning urban data completed.")
+
+    print("Cleaning rural data...")
     cleaned_rural = clean_data(data_rural, children_rural, "CV")
+    print("Cleaning rural data completed.")
 
     cleaned_data = pd.concat([cleaned_rural, cleaned_urban])
+
+    print("Saving cleaned data...")
     cleaned_data.to_csv(os.path.join(OUT_DIR, 'cleaned.csv'), index=False)
+    print("Saved.")
