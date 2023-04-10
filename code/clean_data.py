@@ -27,7 +27,8 @@ def clean_data(data, children_data, idx_str):
         'VIT_A_ug_RE_AVE_ALL',
         'THIAMIN_mg_AVE_ALL',
         'RIBOFLAVIN_mg_AVE_ALL',
-        'NIACIN_mg_NE_AVE_ALL'
+        'NIACIN_mg_NE_AVE_ALL',
+        'VIT_C_mg_AVE_ALL'
     ]
 
     for idx, row in children_data.iterrows():
@@ -66,9 +67,14 @@ def clean_data(data, children_data, idx_str):
                 target[col] = row[col]
             elif col.endswith("AVE_ALL"):
                 nutrient = col[:-7]
-                if nutrient == "PROT_PERCENT_":
+                # alternate names
+                if nutrient == "PROT_PERCENT_" and idx_str == 'CV':
                     nutrient = "PROTEIN_PERCENT_"
-                target[col] = row[[nutrient + day for day in ['WKDAY1', 'WKDAY2', 'WKEND']]].mean()
+                if nutrient == "VIT_C_mg_" and idx_str == 'VZ':
+                    nutrient = "VIT._C_mg_"
+                
+                suffixes = ['Wkday1', 'Wkday2', 'Wkend'] if idx_str == "VZ" else ['WKDAY1', 'WKDAY2', 'WKEND']
+                target[col] = row[[nutrient + day for day in suffixes]].mean()
 
         X = pd.concat([X, pd.DataFrame(new_row, index=[0])])
         y = pd.concat([y, pd.DataFrame(target, index=[0])])
@@ -100,5 +106,5 @@ if __name__ == '__main__':
 
     print("Saving cleaned data...")
     cleaned_X.to_csv(os.path.join(OUT_DIR, 'cleaned_X.csv'), index=False)
-    cleaned_X.to_csv(os.path.join(OUT_DIR, 'cleaned_y.csv'), index=False)
+    cleaned_y.to_csv(os.path.join(OUT_DIR, 'cleaned_y.csv'), index=False)
     print("Saved.")
