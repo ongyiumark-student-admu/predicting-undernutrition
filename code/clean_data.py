@@ -64,6 +64,8 @@ def clean_data(data, children_data, idx_str):
         target['idx'] = new_row['idx']
         for col in TARGET_VARIABLES:
             if col in row.index:
+                if str(row[col]).strip() == '':
+                    continue
                 target[col] = row[col]
             elif col.endswith("AVE_ALL"):
                 nutrient = col[:-7]
@@ -72,7 +74,7 @@ def clean_data(data, children_data, idx_str):
                     nutrient = "PROTEIN_PERCENT_"
                 if nutrient == "VIT_C_mg_" and idx_str == 'VZ':
                     nutrient = "VIT._C_mg_"
-                
+
                 suffixes = ['Wkday1', 'Wkday2', 'Wkend'] if idx_str == "VZ" else ['WKDAY1', 'WKDAY2', 'WKEND']
                 target[col] = row[[nutrient + day for day in suffixes]].mean()
 
