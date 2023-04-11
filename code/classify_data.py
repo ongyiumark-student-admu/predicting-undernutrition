@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     def get_limits(sex_age, threshold):
         if ',' in str(threshold):
-            lb, ub = [int(x) for x in threshold.split(',')]
+            lb, ub = [float(x) for x in threshold.split(',')]
         elif threshold == "RENI":
             task_reni = reni.query(f"SEX_AGE == '{row['RENI_IDX']}'")
             reni_col = target[:-8]
@@ -29,7 +29,7 @@ if __name__ == '__main__':
             lb = float(task_reni[reni_col].values[0])/2
             ub = float(task_reni[reni_col].values[0])*2
         else:
-            lb, ub = 100, float('inf')
+            lb, ub = 100.0, float('inf')
 
         return lb, ub
 
