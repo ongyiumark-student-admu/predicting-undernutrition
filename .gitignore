@@ -10,3 +10,5 @@ submissions
 .tox
 .coverage
 src/predunder.egg-info
+basura*
+garbage*
