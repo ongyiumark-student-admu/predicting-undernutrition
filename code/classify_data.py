@@ -2,14 +2,14 @@ import pandas as pd
 import sys
 import os
 
-DATA_DIR = '../cleaned-data'
+CLEANED_DIR = '../cleaned-data'
 
 
 if __name__ == '__main__':
-    X_df = pd.read_csv(os.path.join(DATA_DIR, 'cleaned_X.csv'))
-    y_df = pd.read_csv(os.path.join(DATA_DIR, 'cleaned_y.csv'))
-    wf = pd.read_excel(os.path.join(DATA_DIR, 'wf.xlsx'), sheet_name='tags')
-    reni = pd.read_excel(os.path.join(DATA_DIR, 'wf.xlsx'), sheet_name='reni')
+    X_df = pd.read_csv(os.path.join(CLEANED_DIR, 'cleaned_X.csv'))
+    y_df = pd.read_csv(os.path.join(CLEANED_DIR, 'cleaned_y.csv'))
+    wf = pd.read_excel(os.path.join(CLEANED_DIR, 'wf.xlsx'), sheet_name='tags')
+    reni = pd.read_excel(os.path.join(CLEANED_DIR, 'wf.xlsx'), sheet_name='reni')
 
     def get_reni_idx(row):
         return f"{'Female' if row['CHILD_SEX'] else 'Male'}_{int(row['AGE'])}"
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     final_tags = pd.DataFrame(data={
         'idx': data['idx'],
     })
-    with pd.ExcelWriter(os.path.join(DATA_DIR, 'tags.xlsx'), engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(os.path.join(CLEANED_DIR, 'tags.xlsx'), engine='xlsxwriter') as writer:
         for task in tasks:
             print(f"Processing {task}...")
             task_wf = wf.query(f"Workflow == '{task}'")
@@ -91,4 +91,4 @@ if __name__ == '__main__':
             final_tags = final_tags.merge(final_task_tags, how='left', on='idx')
             print(f"Completed {task}.")
 
-    final_tags.to_csv(os.path.join(DATA_DIR, 'final_tags.csv'), index=False)
+    final_tags.to_csv(os.path.join(CLEANED_DIR, 'final_tags.csv'), index=False)
