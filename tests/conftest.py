@@ -4,5 +4,6 @@ import pandas as pd
 
 @pytest.fixture(scope="session")
 def df_sample():
-    train = pd.read_csv("train-test-data/2aii_train.csv", index_col=0)
-    return train, '2aii'
+    task = '1b'
+    train = pd.read_csv(f"train-test-data/{task}_train.csv", index_col=0)
+    return train, task
