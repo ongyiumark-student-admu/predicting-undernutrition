@@ -138,6 +138,9 @@ def train_dnn(train, test, label, layers, epochs=1, oversample="none"):
     .. todo:: Build custom evaluation functions to get the model predictions with Tensorflow.
     .. todo:: This only supports binary classification.
     """
+    # Oversampling the training set
+    train = oversample_data(train, label, oversample)
+
     labels = convert_labels(train[label])
     features = train.drop(label, axis=1).to_dict(orient='list')
     predict_features = test.drop(label, axis=1).to_dict(orient='list')
