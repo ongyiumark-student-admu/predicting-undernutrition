@@ -158,7 +158,7 @@ def hypertune(train_func, grid_params, over_tech, task, algo):
 
 
 def save_results(over_tech, algo, train_func, grid_params, task):
-    if (over_tech, algo) in best_saved:
+    if (over_tech, algo) in best_saved.keys():
         print(f'Found existing parameters for {algo} with "{over_tech}" over-sampling.')
         print(best_saved[over_tech, algo])
         print(f'Running {algo} on the these parameters...')
@@ -178,7 +178,7 @@ def save_results(over_tech, algo, train_func, grid_params, task):
 
 def read_bests(task):
     if not os.path.exists(os.path.join(RESULTS_DIR, f'{task}_best_params.txt')):
-        return
+        return dict()
     res = dict()
     with open(os.path.join(RESULTS_DIR, f'{task}_best_params.txt'), 'r') as f:
         o_params = [x.split('-') for x in f.read().split('\n') if len(x) > 0]
