@@ -24,7 +24,7 @@ def get_95_CI(samp_mean, samp_sd, N):
 
 def kfold_to_latex(metrics, task):
     caption = f'Results of 10-fold cross validation on the {task} task with the best hyperparameters based on Cohen\'s $\\kappa$'
-    label = 'tab:kfold_results'
+    label = 'tab:{task}_kfold_results}'
     position = 'c | c c c c'
 
     algorithms = ['RF', 'XGBoost', 'DNN', 'NNRF']
@@ -91,7 +91,7 @@ def kfold_to_latex(metrics, task):
 
 def results_to_latex(results, task):
     caption = f'Results of test data on the {task} task using the best hyperparameters based on Cohen\'s $\\kappa$'
-    label = 'tab:kfold_results'
+    label = 'tab:{task}_test_results'
     position = 'c | c c c c'
 
     algorithms = ['RF', 'XGBoost', 'DNN', 'NNRF']
