@@ -6,7 +6,7 @@ from predunder.functions import kfold_metrics_to_df
 from predunder.training import train_dnn, train_kfold
 
 
-def tune_model(train, label, folds, train_func, param_grid):
+def tune_model(train, label, folds, train_func, param_grid, **kwargs):
     """Performs grid search cross validation on Cohen's Kappa
 
     :param train: DataFrame of the training set
@@ -23,10 +23,12 @@ def tune_model(train, label, folds, train_func, param_grid):
     :rtype: dict
     """
 
-    best_score = 0
-    for i, params in enumerate(list(ParameterGrid(param_grid))):
-        print(f"Starting parameters {i}...")
-        metrics = train_kfold(train, label, folds, train_func, **params)
+    best_score = -float('inf')
+    all_params = list(ParameterGrid(param_grid))
+    for i, params in enumerate(all_params):
+        print(f"Starting parameters {i} of {len(all_params)}...")
+        print(params)
+        metrics = train_kfold(train, label, folds, train_func, **params, **kwargs)
         score = metrics['KAPPA']['MEAN']
 
         if best_score <= score:
@@ -56,14 +58,12 @@ def tune_dnn(train, label, folds, max_nodes, oversample="none"):
     :rtype: pandas.DataFrame
     """
     results = pd.DataFrame()
-    features = train.drop(
-        [label], axis=1).columns
 
     for i in range(1, max_nodes+1):
         for _ in range(5):
             print()
         print("Training", [i])
-        metrics = train_kfold(train, label, folds, train_dnn, features=features, layers=[i], oversample=oversample)
+        metrics = train_kfold(train, label, folds, train_dnn, layers=[i], oversample=oversample)
         rowdf = kfold_metrics_to_df(metrics)
         rowdf['LAYERS'] = [[i]]
         results = pd.concat([results, rowdf])
@@ -73,7 +73,7 @@ def tune_dnn(train, label, folds, max_nodes, oversample="none"):
             for _ in range(5):
                 print()
             print("Training", [i, j])
-            metrics = train_kfold(train, label, folds, train_dnn, features=features, layers=[i, j], oversample=oversample)
+            metrics = train_kfold(train, label, folds, train_dnn, layers=[i, j], oversample=oversample)
             rowdf = kfold_metrics_to_df(metrics)
             rowdf['LAYERS'] = [[i, j]]
             results = pd.concat([results, rowdf])

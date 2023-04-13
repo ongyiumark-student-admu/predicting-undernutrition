@@ -32,32 +32,32 @@ def test_oversample_data(df_sample):
 
 def test_train_dnn(df_sample):
     df, label = df_sample
-    train_dnn(df, df, label, df.drop([label], axis=1).columns, [6])
+    train_dnn(df, df, label, [6])
 
 
 def test_train_dnn_smote(df_sample):
     df, label = df_sample
-    train_dnn(df, df, label, df.drop([label], axis=1).columns, [6], "smote")
+    train_dnn(df, df, label, [6], 1, "smote")
 
 
 def test_train_dnn_adasyn(df_sample):
     df, label = df_sample
-    train_dnn(df, df, label, df.drop([label], axis=1).columns, [6], "adasyn")
+    train_dnn(df, df, label, [6], 1, "adasyn")
 
 
 def test_train_dnn_borderline(df_sample):
     df, label = df_sample
-    train_dnn(df, df, label, df.drop([label], axis=1).columns, [6], "borderline")
+    train_dnn(df, df, label, [6], 1, "borderline")
 
 
 def test_train_kfold(df_sample):
     df, label = df_sample
-    train_kfold(df, label, 2, train_dnn, features=df.drop([label], axis=1).columns, layers=[6])
+    train_kfold(df, label, 2, train_dnn, layers=[6])
 
 
 def test_kfold_metrics_to_df(df_sample):
     df, label = df_sample
-    metrics = train_kfold(df, label, 2, train_dnn, features=df.drop([label], axis=1).columns, layers=[6])
+    metrics = train_kfold(df, label, 2, train_dnn, layers=[6])
     kfold_metrics_to_df(metrics)
 
 

@@ -1,15 +1,14 @@
 # Importing libraries
 import numpy as np
-import pandas as pd
 import tensorflow as tf
-from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.model_selection import StratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import normalize
 from xgboost import XGBClassifier
 from nnrf import NNRF
 from nnrf import ml
 
-from predunder.functions import (convert_labels, df_to_nparray, df_to_dataset, get_metrics, oversample_data)
+from predunder.functions import (convert_labels, df_to_nparray, get_metrics, oversample_data)
 
 
 def train_random_forest(train, test, label, oversample="none", to_normalize=False, **kwargs):
@@ -70,8 +69,10 @@ def train_xgboost(train, test, label, oversample="none", to_normalize=False, **k
 
     # normalize features
     if to_normalize:
-        X_train = normalize(X_train)
-        X_test = normalize(X_test)
+        X_mean = X_train.mean(axis=0)
+        X_std = X_train.std(axis=0)
+        X_train = X_train - X_mean / X_std
+        X_test = X_train - X_mean / X_std
 
     clf.fit(X_train, convert_labels(y_train))
     predicted = clf.predict(X_test)
@@ -118,7 +119,7 @@ def train_nnrf(train, test, label, oversample="none", to_normalize=False, learni
     return predicted
 
 
-def train_dnn(train, test, label, features, layers, oversample="none"):
+def train_dnn(train, test, label, layers, epochs=1, oversample="none"):
     """Train a dense neural network model and make predictions.
 
     :param train: DataFrame of the training set
@@ -127,8 +128,6 @@ def train_dnn(train, test, label, features, layers, oversample="none"):
     :type test: pandas.DataFrame
     :param label: name of the target column for supervised learning
     :type label: str
-    :param features: features to include in training
-    :type features: list[str]
     :param layers: number of nodes per hidden layer in the neural network
     :type layers: list[int]
     :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
@@ -139,56 +138,109 @@ def train_dnn(train, test, label, features, layers, oversample="none"):
     .. todo:: Build custom evaluation functions to get the model predictions with Tensorflow.
     .. todo:: This only supports binary classification.
     """
-    # Generate feauture columns
-    all_inputs = []
-    for col in features:
-        all_inputs.append(tf.keras.Input(shape=(1,), name=col))
+    labels = convert_labels(train[label])
+    features = train.drop(label, axis=1).to_dict(orient='list')
+    predict_features = test.drop(label, axis=1).to_dict(orient='list')
 
-    X_train, X_val, y_train, y_val = train_test_split(
-        train.drop(label, axis=1),
-        train[[label]],
-        test_size=0.2,
-        random_state=42,
-        stratify=train[label]
+    INTEGER_VARIABLES = [
+        'IDD_SCORE',
+        'AGE',
+        'HHID_count',
+        'HDD_SCORE'
+    ]
+    BOOLEAN_VARIABLES = [
+        ('CHILD_SEX', 2),
+        ('BEN_4PS', 2),
+        ('AREA_TYPE', 2),
+    ]
+    ONE_HOT_VARIABLES = [
+        ('FOOD_INSECURITY', 5)
+    ]
+    FLOAT_VARIABLES = [
+        'HH_AGE',
+        'FOOD_EXPENSE_WEEKLY',
+        'NON-FOOD_EXPENSE_WEEKLY',
+        'FOOD_EXPENSE_WEEKLY_pc',
+        'NON-FOOD_EXPENSE_WEEKLY_pc'
+    ]
+
+    def define_preprocessing_model():
+        inputs = {
+            **{int_var: tf.keras.Input(shape=(), dtype='int64') for int_var in INTEGER_VARIABLES},
+            **{bool_var: tf.keras.Input(shape=(), dtype='bool') for bool_var, dim in BOOLEAN_VARIABLES},
+            **{one_hot_var: tf.keras.Input(shape=(), dtype='int64') for one_hot_var, dim in ONE_HOT_VARIABLES},
+            **{float_var: tf.keras.Input(shape=(), dtype='float64') for float_var in FLOAT_VARIABLES}
+        }
+
+        one_hot_outputs = {one_hot_var: tf.keras.layers.CategoryEncoding(dim, output_mode='one_hot')(inputs[one_hot_var])
+                           for one_hot_var, dim in ONE_HOT_VARIABLES}
+        bool_outputs = {bool_var: tf.keras.layers.Normalization(axis=None, mean=0, variance=1)(inputs[bool_var])
+                        for bool_var, dim in BOOLEAN_VARIABLES}
+        integer_outputs = {int_var: tf.keras.layers.Normalization(axis=None,
+                           mean=np.mean(features[int_var]),
+                           variance=np.var(features[int_var]))(inputs[int_var])
+                           for int_var in INTEGER_VARIABLES}
+        float_outputs = {float_var: tf.keras.layers.Normalization(axis=None,
+                         mean=np.mean(features[float_var]),
+                         variance=np.var(features[float_var]))(inputs[float_var])
+                         for float_var in FLOAT_VARIABLES}
+        outputs = {
+            **one_hot_outputs,
+            **bool_outputs,
+            **integer_outputs,
+            **float_outputs
+        }
+        preprocessing_model = tf.keras.Model(inputs, outputs)
+        return preprocessing_model
+
+    def define_training_model(layers):
+        inputs = {
+            **{int_var: tf.keras.Input(shape=(), dtype='float64') for int_var in INTEGER_VARIABLES},
+            **{bool_var: tf.keras.Input(shape=(), dtype='float64') for bool_var, dim in BOOLEAN_VARIABLES},
+            **{one_hot_var: tf.keras.Input(shape=(dim, ), dtype='float64') for one_hot_var, dim in ONE_HOT_VARIABLES},
+            **{float_var: tf.keras.Input(shape=(), dtype='float64') for float_var in FLOAT_VARIABLES}
+        }
+        outputs = tf.keras.layers.Concatenate()([
+            *[inputs[one_hot_var] for one_hot_var, dim in ONE_HOT_VARIABLES],
+            *[tf.expand_dims(inputs[int_var], -1) for int_var in INTEGER_VARIABLES],
+            *[tf.expand_dims(inputs[bool_var], -1) for bool_var, dim in BOOLEAN_VARIABLES],
+            *[tf.expand_dims(inputs[float_var], -1) for float_var in FLOAT_VARIABLES]
+        ])
+        for layer in layers:
+            outputs = tf.keras.layers.Dense(layer, activation='relu')(outputs)
+        outputs = tf.keras.layers.Dense(1)(outputs)
+        training_model = tf.keras.Model(inputs, outputs)
+        return training_model
+
+    preprocessing_model = define_preprocessing_model()
+    training_model = define_training_model(layers)
+
+    # Apply the preprocessing in tf.data.Dataset.map.
+    dataset = tf.data.Dataset.from_tensor_slices((features, labels)).batch(1)
+    dataset = dataset.map(lambda x, y: (preprocessing_model(x), y), num_parallel_calls=tf.data.AUTOTUNE)
+
+    # Compile the model
+    training_model.compile(
+        loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+        optimizer='adam',
+        metrics=['accuracy',
+                 tf.keras.metrics.TruePositives(),
+                 tf.keras.metrics.TrueNegatives(),
+                 tf.keras.metrics.FalsePositives(),
+                 tf.keras.metrics.FalseNegatives()
+                 ]
     )
 
-    train = pd.merge(X_train, y_train, left_index=True, right_index=True)
-    val = pd.merge(X_val, y_val, left_index=True, right_index=True)
+    # Fit the model
+    training_model.fit(dataset, epochs=epochs)
 
-    # Oversampling the training set
-    train = oversample_data(train, label, oversample)
+    # Get predictions
+    inputs = preprocessing_model.input
+    outputs = training_model(preprocessing_model(inputs))
+    inference_model = tf.keras.Model(inputs, outputs)
 
-    # Generating a tensorflow dataset
-    train_ds = df_to_dataset(train, label)
-    val_ds = df_to_dataset(val, label)
-    test_ds = df_to_dataset(test, label)
-
-    # Building the model
-    all_features = tf.keras.layers.concatenate(all_inputs)
-    x = tf.keras.layers.Dense(layers[0], activation="relu")(all_features)
-    for nodes in layers:
-        x = tf.keras.layers.Dense(nodes, activation='relu')(x)
-    output = tf.keras.layers.Dense(1, activation='sigmoid')(x)
-    model = tf.keras.Model(all_inputs, output)
-
-    # Compiling the model
-    model.compile(optimizer='adam',
-                  loss=tf.keras.losses.BinaryCrossentropy(),
-                  metrics=['accuracy',
-                           tf.keras.metrics.TruePositives(),
-                           tf.keras.metrics.TrueNegatives(),
-                           tf.keras.metrics.FalsePositives(),
-                           tf.keras.metrics.FalseNegatives()
-                           ]
-                  )
-
-    # Training the Model
-    es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
-    model.fit(train_ds, epochs=30, callbacks=[es], validation_data=val_ds, verbose=1)
-
-    # Getting predictions
-    output = np.asarray([x[0] for x in model.predict(test_ds)])
-    predicted = np.where(output >= 0.5, 1, 0)
+    predict_dataset = tf.data.Dataset.from_tensor_slices(predict_features).batch(1)
+    predicted = np.array(list(map(lambda x: int(x > 0.5), inference_model.predict(predict_dataset).reshape(-1))))
 
     return predicted
 

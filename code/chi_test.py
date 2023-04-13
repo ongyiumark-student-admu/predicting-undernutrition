@@ -182,7 +182,7 @@ def df_to_latex(df, caption, label, position):
     res += '\\hline\n'
 
     feature_names = np.unique([x[0] for x in chitest_df.index.to_list()])
-    cutoff = [7]
+    cutoff = [5]
 
     for feature_num, name in enumerate(feature_names):
         feature_df = df.loc[name]
