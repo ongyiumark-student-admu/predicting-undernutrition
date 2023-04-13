@@ -182,22 +182,22 @@ if __name__ == '__main__':
         save_results(over_tech, 'RF', train_random_forest, rf_grid_params, TASK)
 
         xgb_grid_params = {
-            'n_estimators': [50, 100, 200][0:1],
+            'n_estimators': [50, 100, 200],
             'max_depth': [1, 2, 3],
             'learning_rate': [0.001, 0.01, 0.1],
-            'reg_lambda': [0.1, 1, 10, 100],
-            'reg_alpha': [0.1, 1, 10, 100]
+            'reg_lambda': [0.1, 1, 10, 100, 1000],
+            'reg_alpha': [0.1, 1, 10, 100, 1000]
         }
         save_results(over_tech, 'XGBoost', train_xgboost, xgb_grid_params, TASK)
 
         dnn_grid_params = {
             'layers': [[13], [6], [3], [13, 6], [13, 3], [6, 3]],
-            'epochs': [1, 10, 30, 60, 100],
+            'epochs': [1, 10, 30],
         }
         save_results(over_tech, 'DNN', train_dnn, dnn_grid_params, TASK)
         nnrf_grid_params = {
-            'n': [50, 100, 200][0:1],
-            'd': [1, 2, 3][0:1],
+            'n': [50, 100],
+            'd': [1, 2, 3],
             'learning_rate': [0.01, 0.1, 1],
             'reg_factor': [0.1, 1, 10, 100],
             'to_normalize': [True]
