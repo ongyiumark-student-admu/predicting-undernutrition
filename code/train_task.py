@@ -11,6 +11,7 @@ from predunder.functions import get_metrics, convert_labels, kfold_metrics_to_df
 DATA_DIR = '../train-test-data'
 OVERSAMPLING = ['none', 'smote', 'borderline', 'adasyn']
 LATEX_DIR = '../latex'
+RESULTS_DIR = '../results'
 
 
 def get_95_CI(samp_mean, samp_sd, N):
@@ -141,7 +142,10 @@ results = dict()
 
 def hypertune(train_func, grid_params, over_tech, task):
     best_params = tune_model(train_df, task, 10, train_func, grid_params, oversample=over_tech)
-    print(over_tech, best_params, )
+
+    with open(os.path.join(RESULTS_DIR, f'{task}_best_params.txt'), 'a') as f:
+        print(over_tech, best_params, file=f)
+
     preds = train_func(train_df, test_df, task, **best_params)
     kfold_metrics = train_kfold(train_df, task, 10, train_func, **best_params)
     kfold_df = kfold_metrics_to_df(kfold_metrics)
@@ -164,6 +168,10 @@ if __name__ == '__main__':
     TASK = sys.argv[1]
     train_df = pd.read_csv(os.path.join(DATA_DIR, f"{TASK}_train.csv"), index_col=0)
     test_df = pd.read_csv(os.path.join(DATA_DIR, f"{TASK}_test.csv"), index_col=0)
+
+    with open(os.path.join(RESULTS_DIR, f'{TASK}_best_params.txt'), 'w') as f:
+        print('', file=f)
+
     for over_tech in OVERSAMPLING:
         rf_grid_params = {
             'bootstrap': [True, False],
