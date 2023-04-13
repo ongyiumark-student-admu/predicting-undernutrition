@@ -2,13 +2,13 @@ import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
 
-DATA_DIR = '../cleaned-data'
-OUT_DIR = '../train-test-data'
+CLEANED_DIR = '../cleaned-data'
+TRAIN_TEST_DIR = '../train-test-data'
 
 
 if __name__ == '__main__':
-    X = pd.read_csv(os.path.join(DATA_DIR, 'cleaned_X.csv'), index_col=0)
-    tags = pd.read_csv(os.path.join(DATA_DIR, 'final_tags.csv'), index_col=0)
+    X = pd.read_csv(os.path.join(CLEANED_DIR, 'cleaned_X.csv'), index_col=0)
+    tags = pd.read_csv(os.path.join(CLEANED_DIR, 'final_tags.csv'), index_col=0)
 
     for task in tags.columns.to_list():
         print(f"Splitting {task}")
@@ -25,6 +25,6 @@ if __name__ == '__main__':
         train_df = pd.merge(X_train, y_train, left_index=True, right_index=True)
         test_df = pd.merge(X_test, y_test, left_index=True, right_index=True)
 
-        train_df.to_csv(os.path.join(OUT_DIR, f'{task}_train.csv'))
-        test_df.to_csv(os.path.join(OUT_DIR, f'{task}_test.csv'))
+        train_df.to_csv(os.path.join(TRAIN_TEST_DIR, f'{task}_train.csv'))
+        test_df.to_csv(os.path.join(TRAIN_TEST_DIR, f'{task}_test.csv'))
         print(f"Task {task} completed.")
