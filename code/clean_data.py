@@ -1,14 +1,15 @@
 import pandas as pd
 import numpy as np
 import os
+from typing import Dict, Union, List
 
 URBAN_SHEET = "Valenzuela_20201016_Feb"
 RURAL_SHEET = "ComVal_20200118_Oct"
 DATA_DIR = "../data/Data.xlsx"
-OUT_DIR = "../cleaned-data"
+CLEANED_DIR = "../cleaned-data"
 
 INDIVIDUAL_VARIABLES = ['CHILD_SEX', 'IDD_SCORE', 'AGE']
-CAT_IDX = {
+CAT_IDX: Dict[str, List[Union[float, str]]] = {
     'CHILD_SEX': ['Male', 'Female'],
     'FOOD_INSECURITY': [np.nan, 'None', 'Mild', 'Moderate', 'Severe'],
     'BEN_4PS': ['No', 'Yes'],
@@ -146,6 +147,6 @@ if __name__ == '__main__':
     cleaned_y = pd.concat([y_rural, y_urban])
 
     print("Saving cleaned data...")
-    cleaned_X.to_csv(os.path.join(OUT_DIR, 'cleaned_X.csv'), index=False)
-    cleaned_y.to_csv(os.path.join(OUT_DIR, 'cleaned_y.csv'), index=False)
+    cleaned_X.to_csv(os.path.join(CLEANED_DIR, 'cleaned_X.csv'), index=False)
+    cleaned_y.to_csv(os.path.join(CLEANED_DIR, 'cleaned_y.csv'), index=False)
     print("Saved.")
