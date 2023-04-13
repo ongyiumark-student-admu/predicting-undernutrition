@@ -178,7 +178,7 @@ def save_results(over_tech, algo, train_func, grid_params, task):
 
 def read_bests(task):
     res = dict()
-    with open(os.path.join(RESULTS_DIR, f'1b_best_params.txt'), 'r') as f:
+    with open(os.path.join(RESULTS_DIR, f'{task}_best_params.txt'), 'r') as f:
         o_params = [x.split('-') for x in f.read().split('\n') if len(x) > 0]
         for over_tech, algo, param_str in o_params:
             param = eval(param_str)
