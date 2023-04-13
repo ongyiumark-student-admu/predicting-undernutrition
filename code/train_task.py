@@ -6,7 +6,7 @@ import sys
 from predunder.hypertuning import tune_model
 from predunder.training import train_random_forest, train_xgboost, train_dnn, train_nnrf, train_kfold
 from predunder.functions import get_metrics, convert_labels, kfold_metrics_to_df
-
+from typing import Dict, List, Union, Any, Tuple
 
 DATA_DIR = '../train-test-data'
 OVERSAMPLING = ['none', 'smote', 'borderline', 'adasyn']
@@ -136,8 +136,9 @@ def results_to_latex(results, task):
     return res
 
 
-metrics = dict()
-results = dict()
+metrics: Dict[Tuple[str, str], Any] = dict()
+results: Dict[Tuple[str, str], Union[float, Tuple[float, float, float, float]]] = dict()
+
 
 def run_algo(train_func, best_params, over_tech, task):
     preds = train_func(train_df, test_df, task, **best_params)
