@@ -6,7 +6,7 @@ import sys
 from predunder.hypertuning import tune_model
 from predunder.training import train_random_forest, train_xgboost, train_dnn, train_nnrf, train_kfold
 from predunder.functions import get_metrics, convert_labels, kfold_metrics_to_df
-from typing import Dict, List, Union, Any, Tuple
+from typing import Dict, Union, Any, Tuple
 
 DATA_DIR = '../train-test-data'
 OVERSAMPLING = ['none', 'smote', 'borderline', 'adasyn']
