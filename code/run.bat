@@ -1,5 +1,5 @@
-py chi_test.py
-:: py train_task.py 1b
+:: py chi_test.py
+py train_task.py 1b
 ::py train_task.py 2ai
 ::py train_task.py 2aii
 :: py train_task.py 2aiii
