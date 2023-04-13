@@ -255,6 +255,9 @@ if __name__ == '__main__':
         col_format = "c c |" + " c"*len(data[task].unique()) + "| c | c"
         caption = f"Asssessing the association between features and labels in the {task} task using $\\chi^2$ test for independence"
 
+        with open(os.path.join(LATEX_DIR, f'{task}_chitest.tex'), 'w') as f:
+            print(df_to_latex(chitest_df, caption, f"tab:chitest_{task}", col_format), file=f)
+
         with open(os.path.join(LATEX_DIR, 'chitest_tables.tex'), 'a') as f:
             print(df_to_latex(chitest_df, caption, f"tab:chitest_{task}", col_format), file=f)
         print("Done.")
