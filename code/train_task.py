@@ -6,7 +6,7 @@ import sys
 from predunder.hypertuning import tune_model
 from predunder.training import train_random_forest, train_xgboost, train_dnn, train_nnrf, train_kfold
 from predunder.functions import get_metrics, convert_labels, kfold_metrics_to_df
-
+from typing import Dict, Union, Any, Tuple
 
 DATA_DIR = '../train-test-data'
 OVERSAMPLING = ['none', 'smote', 'borderline', 'adasyn']
@@ -136,16 +136,11 @@ def results_to_latex(results, task):
     return res
 
 
-metrics = dict()
-results = dict()
+metrics: Dict[Tuple[str, str], Any] = dict()
+results: Dict[Tuple[str, str], Union[float, Tuple[float, float, float, float]]] = dict()
 
 
-def hypertune(train_func, grid_params, over_tech, task):
-    best_params = tune_model(train_df, task, 10, train_func, grid_params, oversample=over_tech)
-
-    with open(os.path.join(RESULTS_DIR, f'{task}_best_params.txt'), 'a') as f:
-        print(over_tech, best_params, file=f)
-
+def run_algo(train_func, best_params, over_tech, task):
     preds = train_func(train_df, test_df, task, **best_params)
     kfold_metrics = train_kfold(train_df, task, 10, train_func, **best_params)
     kfold_df = kfold_metrics_to_df(kfold_metrics)
@@ -154,9 +149,27 @@ def hypertune(train_func, grid_params, over_tech, task):
     return kfold_df, {key: val for key, val in zip(['ACCURACY', 'SENSITIVITY', 'SPECIFICITY', 'KAPPA'], results)}
 
 
+def hypertune(train_func, grid_params, over_tech, task, algo):
+    best_params = tune_model(train_df, task, 10, train_func, grid_params, oversample=over_tech)
+
+    with open(os.path.join(RESULTS_DIR, f'{task}_best_params.txt'), 'a') as f:
+        print(over_tech, algo, best_params, sep='-', file=f)
+
+    return run_algo(train_func, best_params, over_tech, task)
+
+
 def save_results(over_tech, algo, train_func, grid_params, task):
+    if (over_tech, algo) in best_saved.keys():
+        print(f'Found existing parameters for {algo} with "{over_tech}" over-sampling.')
+        print(best_saved[over_tech, algo])
+        print(f'Running {algo} on the these parameters...')
+        met, res = run_algo(train_func, best_saved[over_tech, algo], over_tech, task)
+        metrics[(over_tech, algo)] = met
+        results[(over_tech, algo)] = res
+        print(f'Done saving results for {algo} with "{over_tech}" over-sampling.')
+        return
     try:
-        met, res = hypertune(train_func, grid_params, over_tech, task)
+        met, res = hypertune(train_func, grid_params, over_tech, task, algo)
         metrics[(over_tech, algo)] = met
         results[(over_tech, algo)] = res
     except (ValueError):
@@ -164,13 +177,29 @@ def save_results(over_tech, algo, train_func, grid_params, task):
         results[(over_tech, algo)] = np.nan
 
 
+def read_bests(task):
+    if not os.path.exists(os.path.join(RESULTS_DIR, f'{task}_best_params.txt')):
+        return dict()
+    res = dict()
+    with open(os.path.join(RESULTS_DIR, f'{task}_best_params.txt'), 'r') as f:
+        o_params = [x.split('-') for x in f.read().split('\n') if len(x) > 0]
+        for over_tech, algo, param_str in o_params:
+            param = eval(param_str)
+            res[over_tech, algo] = param
+    return res
+
+
 if __name__ == '__main__':
     TASK = sys.argv[1]
     train_df = pd.read_csv(os.path.join(DATA_DIR, f"{TASK}_train.csv"), index_col=0)
     test_df = pd.read_csv(os.path.join(DATA_DIR, f"{TASK}_test.csv"), index_col=0)
 
-    with open(os.path.join(RESULTS_DIR, f'{TASK}_best_params.txt'), 'w') as f:
-        print('', file=f)
+    global best_saved
+    best_saved = read_bests(TASK)
+
+    if len(sys.argv) >= 3 and int(sys.argv[2]):
+        with open(os.path.join(RESULTS_DIR, f'{TASK}_best_params.txt'), 'w') as f:
+            print('', end='', file=f)
 
     for over_tech in OVERSAMPLING:
         rf_grid_params = {
@@ -182,24 +211,24 @@ if __name__ == '__main__':
         save_results(over_tech, 'RF', train_random_forest, rf_grid_params, TASK)
 
         xgb_grid_params = {
-            'n_estimators': [50, 100, 200][0:1],
+            'n_estimators': [50, 100, 200],
             'max_depth': [1, 2, 3],
             'learning_rate': [0.001, 0.01, 0.1],
-            'reg_lambda': [0.1, 1, 10, 100],
-            'reg_alpha': [0.1, 1, 10, 100]
+            'reg_lambda': [0.1, 1, 10, 100, 1000],
+            'reg_alpha': [0.1, 1, 10, 100, 1000]
         }
         save_results(over_tech, 'XGBoost', train_xgboost, xgb_grid_params, TASK)
 
         dnn_grid_params = {
             'layers': [[13], [6], [3], [13, 6], [13, 3], [6, 3]],
-            'epochs': [1, 10, 30, 60, 100],
+            'epochs': [1, 10, 30],
         }
         save_results(over_tech, 'DNN', train_dnn, dnn_grid_params, TASK)
         nnrf_grid_params = {
-            'n': [50, 100, 200][0:1],
-            'd': [1, 2, 3][0:1],
+            'n': [1, 10, 50],
+            'd': [1, 2],
             'learning_rate': [0.01, 0.1, 1],
-            'reg_factor': [0.1, 1, 10, 100],
+            'reg_factor': [1, 10, 100],
             'to_normalize': [True]
         }
         save_results(over_tech, 'NNRF', train_nnrf, nnrf_grid_params, TASK)
