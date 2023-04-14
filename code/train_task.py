@@ -141,8 +141,8 @@ results: Dict[Tuple[str, str], Union[float, Tuple[float, float, float, float]]] 
 
 
 def run_algo(train_func, best_params, over_tech, task):
-    preds = train_func(train_df, test_df, task, **best_params)
-    kfold_metrics = train_kfold(train_df, task, 10, train_func, **best_params)
+    preds = train_func(train_df, test_df, task, **best_params, oversample=over_tech)
+    kfold_metrics = train_kfold(train_df, task, 10, train_func, **best_params, oversample=over_tech)
     kfold_df = kfold_metrics_to_df(kfold_metrics)
 
     results = get_metrics(preds, convert_labels(test_df[task]))
@@ -227,6 +227,7 @@ if __name__ == '__main__':
         nnrf_grid_params = {
             'n': [1, 10, 50],
             'd': [1, 2],
+            'r': [1, 'log2'],
             'learning_rate': [0.01, 0.1, 1],
             'reg_factor': [1, 10, 100],
             'to_normalize': [True]

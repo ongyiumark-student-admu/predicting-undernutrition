@@ -3,7 +3,6 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import StratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import normalize
 from xgboost import XGBClassifier
 from nnrf import NNRF
 from nnrf import ml
@@ -36,8 +35,10 @@ def train_random_forest(train, test, label, oversample="none", to_normalize=Fals
 
     # normalize features
     if to_normalize:
-        X_train = normalize(X_train)
-        X_test = normalize(X_test)
+        X_mean = X_train.mean(axis=0)
+        X_std = X_train.std(axis=0)
+        X_train = X_train - X_mean / X_std
+        X_test = X_train - X_mean / X_std
 
     clf.fit(X_train, convert_labels(y_train))
     predicted = clf.predict(X_test)
@@ -111,8 +112,10 @@ def train_nnrf(train, test, label, oversample="none", to_normalize=False, learni
 
     # normalize features
     if to_normalize:
-        X_train = normalize(X_train)
-        X_test = normalize(X_test)
+        X_mean = X_train.mean(axis=0)
+        X_std = X_train.std(axis=0)
+        X_train = X_train - X_mean / X_std
+        X_test = X_train - X_mean / X_std
 
     clf.fit(X_train, convert_labels(y_train))
     predicted = clf.predict(X_test)
