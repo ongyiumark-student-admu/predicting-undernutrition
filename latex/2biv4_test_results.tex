@@ -1,0 +1,40 @@
+\begin{table}[!htb]
+\centering
+\caption{Results of test data on the 2biv4 task using the best hyperparameters based on Cohen's $\kappa$}
+\label{tab:2biv4_test_results}
+\begin{tabular}{c | c c c c}
+\hline
+ & \multicolumn{4}{c}{Algorithms}\\ 
+Metrics &RF & XGBoost & DNN & NNRF\\ 
+\hline
+Oversampling &\multicolumn{4}{|c}{\textbf{None}}\\ 
+\hline
+Accuracy & 0.7806 & 0.7743 & 0.7304 & 0.7806\\ 
+Sensitivity & 1.0000 & 0.9518 & 0.8675 & 1.0000\\ 
+Specificity & 0.0000 & 0.1429 & 0.2429 & 0.0000\\ 
+Cohen's $\kappa$ & 0.0000 & 0.1256 & 0.1230 & 0.0000\\ 
+\hline
+Oversampling &\multicolumn{4}{|c}{\textbf{SMOTE}}\\ 
+\hline
+Accuracy & 0.7806 & 0.7806 & 0.7335 & 0.7806\\ 
+Sensitivity & 1.0000 & 0.9839 & 0.8715 & 1.0000\\ 
+Specificity & 0.0000 & 0.0571 & 0.2429 & 0.0000\\ 
+Cohen's $\kappa$ & 0.0000 & 0.0603 & 0.1282 & 0.0000\\ 
+\hline
+Oversampling &\multicolumn{4}{|c}{\textbf{Borderline}}\\ 
+\hline
+Accuracy & 0.7806 & 0.7837 & 0.7555 & 0.7806\\ 
+Sensitivity & 1.0000 & 0.9839 & 0.8956 & 1.0000\\ 
+Specificity & 0.0000 & 0.0714 & 0.2571 & 0.0000\\ 
+Cohen's $\kappa$ & 0.0000 & 0.0806 & 0.1763 & 0.0000\\ 
+\hline
+Oversampling &\multicolumn{4}{|c}{\textbf{ADASYN}}\\ 
+\hline
+Accuracy & 0.7806 & 0.7712 & 0.7492 & 0.7806\\ 
+Sensitivity & 1.0000 & 0.9719 & 0.8835 & 1.0000\\ 
+Specificity & 0.0000 & 0.0571 & 0.2714 & 0.0000\\ 
+Cohen's $\kappa$ & 0.0000 & 0.0416 & 0.1747 & 0.0000\\ 
+\hline
+\end{tabular}
+\end{table}
+

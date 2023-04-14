@@ -21,6 +21,25 @@ def convert_labels(labels):
     return np.asarray(list(map(lambda v: LABELS_DICT[sz].index(v), labels)))
 
 
+def normalize(train, test):
+    """Normalize training and testing values using training mean and standard deviation.
+
+    :param train: numpy array of training set
+    :type train: np.ndarray[float]
+    :param test: numpy array of testing set
+    :type test: np.ndarray[float]
+    :returns: normalized train and normalized test
+    :rtype: Tuple[np.ndarray[float], np.ndarray[float]]
+    """
+    train = train.astype(float)
+    test = test.astype(float)
+    tr_mean = train.mean(axis=0)
+    tr_std = train.std(axis=0)
+    train = (train - tr_mean) / tr_std
+    test = (test - tr_mean) / tr_std
+    return train, test
+
+
 def df_to_dataset(dataframe, label, shuffle=True, batch_size=8):
     """Convert a Pandas DataFrame into a Tensorflow Dataset.
 
