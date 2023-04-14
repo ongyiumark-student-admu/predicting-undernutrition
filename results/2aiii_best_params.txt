@@ -1,12 +1,9 @@
 none-RF-{'bootstrap': False, 'max_depth': 1, 'max_features': 'sqrt', 'n_estimators': 200}
 none-XGBoost-{'learning_rate': 0.001, 'max_depth': 1, 'n_estimators': 200, 'reg_alpha': 1, 'reg_lambda': 1}
 none-DNN-{'epochs': 30, 'layers': [13, 3]}
-none-NNRF-{'d': 1, 'learning_rate': 0.01, 'n': 10, 'reg_factor': 10, 'to_normalize': True}
 smote-RF-{'bootstrap': False, 'max_depth': 2, 'max_features': 'sqrt', 'n_estimators': 50}
 smote-XGBoost-{'learning_rate': 0.001, 'max_depth': 1, 'n_estimators': 200, 'reg_alpha': 1, 'reg_lambda': 1}
-smote-NNRF-{'d': 1, 'learning_rate': 0.01, 'n': 10, 'reg_factor': 10, 'to_normalize': True}
 borderline-RF-{'bootstrap': False, 'max_depth': 1, 'max_features': 'sqrt', 'n_estimators': 100}
 borderline-XGBoost-{'learning_rate': 0.001, 'max_depth': 1, 'n_estimators': 200, 'reg_alpha': 1, 'reg_lambda': 1}
-borderline-NNRF-{'d': 1, 'learning_rate': 0.01, 'n': 10, 'reg_factor': 10, 'to_normalize': True}
 smote-DNN-{'epochs': 30, 'layers': [13, 3]}
 borderline-DNN-{'epochs': 30, 'layers': [13]}
