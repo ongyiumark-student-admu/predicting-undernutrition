@@ -7,7 +7,7 @@ from xgboost import XGBClassifier
 from nnrf import NNRF
 from nnrf import ml
 
-from predunder.functions import (convert_labels, df_to_nparray, get_metrics, oversample_data)
+from predunder.functions import (convert_labels, df_to_nparray, get_metrics, oversample_data, normalize)
 
 
 def train_random_forest(train, test, label, oversample="none", to_normalize=False, **kwargs):
@@ -35,10 +35,7 @@ def train_random_forest(train, test, label, oversample="none", to_normalize=Fals
 
     # normalize features
     if to_normalize:
-        X_mean = X_train.mean(axis=0)
-        X_std = X_train.std(axis=0)
-        X_train = X_train - X_mean / X_std
-        X_test = X_train - X_mean / X_std
+        X_train, X_test = normalize(X_train, X_test)
 
     clf.fit(X_train, convert_labels(y_train))
     predicted = clf.predict(X_test)
@@ -70,10 +67,7 @@ def train_xgboost(train, test, label, oversample="none", to_normalize=False, **k
 
     # normalize features
     if to_normalize:
-        X_mean = X_train.mean(axis=0)
-        X_std = X_train.std(axis=0)
-        X_train = X_train - X_mean / X_std
-        X_test = X_train - X_mean / X_std
+        X_train, X_test = normalize(X_train, X_test)
 
     clf.fit(X_train, convert_labels(y_train))
     predicted = clf.predict(X_test)
@@ -112,10 +106,7 @@ def train_nnrf(train, test, label, oversample="none", to_normalize=False, learni
 
     # normalize features
     if to_normalize:
-        X_mean = X_train.mean(axis=0)
-        X_std = X_train.std(axis=0)
-        X_train = X_train - X_mean / X_std
-        X_test = X_train - X_mean / X_std
+        X_train, X_test = normalize(X_train, X_test)
 
     clf.fit(X_train, convert_labels(y_train))
     predicted = clf.predict(X_test)
