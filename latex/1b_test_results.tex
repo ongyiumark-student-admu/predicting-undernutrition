@@ -1,0 +1,40 @@
+\begin{table}[!htb]
+\centering
+\caption{Results of test data on the 1b task using the best hyperparameters based on Cohen's $\kappa$}
+\label{tab:1b_test_results}
+\begin{tabular}{c | c c c c}
+\hline
+ & \multicolumn{4}{c}{Algorithms}\\ 
+Metrics &RF & XGBoost & DNN & NNRF\\ 
+\hline
+Oversampling &\multicolumn{4}{|c}{\textbf{None}}\\ 
+\hline
+Accuracy & 0.8517 & 0.8297 & 0.8265 & 0.8454\\ 
+Sensitivity & 0.9851 & 0.9328 & 0.9328 & 1.0000\\ 
+Specificity & 0.1224 & 0.2653 & 0.2449 & 0.0000\\ 
+Cohen's $\kappa$ & 0.1593 & 0.2331 & 0.2112 & 0.0000\\ 
+\hline
+Oversampling &\multicolumn{4}{|c}{\textbf{SMOTE}}\\ 
+\hline
+Accuracy & 0.8454 & 0.8423 & 0.7950 & 0.8454\\ 
+Sensitivity & 1.0000 & 0.9552 & 0.8806 & 1.0000\\ 
+Specificity & 0.0000 & 0.2245 & 0.3265 & 0.0000\\ 
+Cohen's $\kappa$ & 0.0000 & 0.2295 & 0.2089 & 0.0000\\ 
+\hline
+Oversampling &\multicolumn{4}{|c}{\textbf{Borderline}}\\ 
+\hline
+Accuracy & 0.8454 & 0.8328 & 0.8265 & 0.8454\\ 
+Sensitivity & 1.0000 & 0.9552 & 0.9142 & 1.0000\\ 
+Specificity & 0.0000 & 0.1633 & 0.3469 & 0.0000\\ 
+Cohen's $\kappa$ & 0.0000 & 0.1563 & 0.2823 & 0.0000\\ 
+\hline
+Oversampling &\multicolumn{4}{|c}{\textbf{ADASYN}}\\ 
+\hline
+Accuracy & 0.8423 & 0.8423 & 0.8297 & 0.8454\\ 
+Sensitivity & 0.9963 & 0.9552 & 0.9328 & 1.0000\\ 
+Specificity & 0.0000 & 0.2245 & 0.2653 & 0.0000\\ 
+Cohen's $\kappa$ & -0.0062 & 0.2295 & 0.2331 & 0.0000\\ 
+\hline
+\end{tabular}
+\end{table}
+

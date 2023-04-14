@@ -1,0 +1,98 @@
+\begin{table}[!htb]
+\centering
+\caption{Asssessing the association between features and labels in the 2ai task using $\chi^2$ test for independence}
+\label{tab:chitest_2ai}
+\begin{tabular}{c c | c c| c | c}
+\hline
+\multicolumn{2}{c|}{Features}& \multicolumn{2}{c|}{Labels}& \multirow{2}{*}{$\chi^2$} & \multirow{2}{*}{p-value}\\ 
+& & Increased Risk & Reduced Risk & & \\ 
+\hline
+Age &  &  & & 19.38 & $< 0.01$ \\ 
+& $< 3$ & 0 & 1& & \\ 
+& $3-5$ & 72 & 8& & \\ 
+& $6-9$ & 173 & 73& & \\ 
+& $10-12$ & 193 & 62& & \\ 
+& $13-18$ & 40 & 10& & \\ 
+& $> 19$ & 0 & 1& & \\ 
+\hline 
+Area &  &  & & 90.12 & $< 0.01$ \\ 
+& Rural & 301 & 29& & \\ 
+& Urban & 177 & 126& & \\ 
+\hline 
+4Ps &  &  & & 1.6 & 0.21 \\ 
+& No & 298 & 106& & \\ 
+& Yes & 180 & 49& & \\ 
+\hline 
+Sex &  &  & & 0.0 & 1.0 \\ 
+& Male & 254 & 82& & \\ 
+& Female & 224 & 73& & \\ 
+\hline 
+FE &  &  & & 4.76 & 0.19 \\ 
+& $< 1212.0$ & 128 & 30& & \\ 
+& $1212.0-1658.5$ & 121 & 37& & \\ 
+& $1658.5-2252.9$ & 116 & 42& & \\ 
+& $> 2252.9$ & 113 & 46& & \\ 
+\hline 
+FE PC &  &  & & 14.76 & $< 0.01$ \\ 
+& $< 225.2$ & 130 & 28& & \\ 
+& $225.2-324.0$ & 129 & 29& & \\ 
+& $324.0-492.0$ & 112 & 46& & \\ 
+& $> 492.0$ & 107 & 52& & \\ 
+\hline 
+\end{tabular}
+\end{table}
+\begin{table}
+\centering
+\label{tab:chitest_2ai_cont}
+\begin{tabular}{c c | c c| c | c}
+\hline
+\multicolumn{6}{c}{Continuation of Table \ref{tab:chitest_2ai}}\\ 
+\hline
+\multicolumn{2}{c|}{Features}& \multicolumn{2}{c|}{Labels}& \multirow{2}{*}{$\chi^2$} & \multirow{2}{*}{p-value}\\ 
+& & Increased Risk & Reduced Risk & & \\ 
+\hline
+FI &  &  & & 13.01 & $< 0.01$ \\ 
+& None & 101 & 52& & \\ 
+& Mild & 71 & 28& & \\ 
+& Moderate & 148 & 37& & \\ 
+& Severe & 158 & 38& & \\ 
+\hline 
+HDD &  &  & & 51.88 & $< 0.01$ \\ 
+& $< 8$ & 74 & 14& & \\ 
+& $8-9$ & 113 & 21& & \\ 
+& $9-10$ & 179 & 36& & \\ 
+& $> 10$ & 112 & 84& & \\ 
+\hline 
+HH Count &  &  & & 7.38 & 0.06 \\ 
+& $< 4$ & 61 & 27& & \\ 
+& $4-5$ & 114 & 47& & \\ 
+& $5-6$ & 113 & 36& & \\ 
+& $> 6$ & 190 & 45& & \\ 
+\hline 
+HH Age &  &  & & 6.4 & 0.09 \\ 
+& $< 18.5$ & 126 & 28& & \\ 
+& $18.5-21.8$ & 113 & 49& & \\ 
+& $21.8-26.2$ & 120 & 37& & \\ 
+& $> 26.2$ & 119 & 41& & \\ 
+\hline 
+IDD &  &  & & 89.02 & $< 0.01$ \\ 
+& $0-2$ & 5 & 0& & \\ 
+& $3-6$ & 252 & 33& & \\ 
+& $7-10$ & 219 & 102& & \\ 
+& $11-16$ & 2 & 20& & \\ 
+\hline 
+NE &  &  & & 14.38 & $< 0.01$ \\ 
+& $< 729.5$ & 137 & 21& & \\ 
+& $729.5-1436.8$ & 114 & 44& & \\ 
+& $1436.8-2685.5$ & 112 & 46& & \\ 
+& $> 2685.5$ & 115 & 44& & \\ 
+\hline 
+NE PC &  &  & & 18.06 & $< 0.01$ \\ 
+& $< 145.3$ & 139 & 19& & \\ 
+& $145.3-279.4$ & 115 & 43& & \\ 
+& $279.4-593.3$ & 113 & 45& & \\ 
+& $> 593.3$ & 111 & 48& & \\ 
+\hline 
+\end{tabular}
+\end{table}
+
