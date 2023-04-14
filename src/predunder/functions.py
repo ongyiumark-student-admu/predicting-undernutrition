@@ -35,8 +35,8 @@ def normalize(train, test):
     test = test.astype(float)
     tr_mean = train.mean(axis=0)
     tr_std = train.std(axis=0)
-    train = train - tr_mean / tr_std
-    test = test - tr_mean / tr_std
+    train = (train - tr_mean) / tr_std
+    test = (test - tr_mean) / tr_std
     return train, test
 
 
