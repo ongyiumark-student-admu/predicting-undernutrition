@@ -7,3 +7,6 @@ borderline-RF-{'bootstrap': False, 'max_depth': 1, 'max_features': 1, 'n_estimat
 borderline-XGBoost-{'learning_rate': 0.1, 'max_depth': 3, 'n_estimators': 200, 'reg_alpha': 0.1, 'reg_lambda': 1}
 smote-DNN-{'epochs': 30, 'layers': [13, 6]}
 borderline-DNN-{'epochs': 30, 'layers': [13]}
+none-NNRF-{'d': 4, 'l1': 0, 'l2': 0, 'max_iter': 30, 'n': 50, 'to_normalize': True}
+smote-NNRF-{'d': 4, 'l1': 0.01, 'l2': 0.01, 'max_iter': 30, 'n': 50, 'to_normalize': True}
+borderline-NNRF-{'d': 4, 'l1': 0, 'l2': 0, 'max_iter': 30, 'n': 50, 'to_normalize': True}

@@ -225,11 +225,11 @@ if __name__ == '__main__':
         }
         save_results(over_tech, 'DNN', train_dnn, dnn_grid_params, TASK)
         nnrf_grid_params = {
-            'n': [1, 10, 50],
-            'd': [1, 2],
-            'r': [1, 'log2'],
-            'learning_rate': [0.01, 0.1, 1],
-            'reg_factor': [1, 10, 100],
+            'n': [50],
+            'd': [4],
+            'l1': [0, 0.01, 0.1, 1, 10],
+            'l2': [0, 0.01, 0.1, 1, 10],
+            'max_iter': [1, 10, 30],
             'to_normalize': [True]
         }
         save_results(over_tech, 'NNRF', train_nnrf, nnrf_grid_params, TASK)
