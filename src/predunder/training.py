@@ -74,7 +74,7 @@ def train_xgboost(train, test, label, oversample="none", to_normalize=False, **k
     return predicted
 
 
-def train_nnrf(train, test, label, oversample="none", to_normalize=False, learning_rate=0.1, reg_factor=0, **kwargs):
+def train_nnrf(train, test, label, oversample="none", to_normalize=False, learning_rate=0.001, l1=0, l2=0, **kwargs):
     """Train an NNRF model and make predictions.
 
     :param train: DataFrame of the training set
@@ -98,9 +98,9 @@ def train_nnrf(train, test, label, oversample="none", to_normalize=False, learni
     train = oversample_data(train, label, oversample)
 
     o = ml.optimizer.Adam(alpha=learning_rate)
-    r = ml.regularizer.L2(c=reg_factor)
+    r = ml.regularizer.L1L2(l1=l1, l2=l2)
 
-    clf = NNRF(random_state=42, loss='cross-entropy', optimizer=o, regularize=r, **kwargs)
+    clf = NNRF(random_state=42, loss='cross-entropy', optimizer=o, regularize=r, verbose=1, **kwargs)
     X_train, y_train = df_to_nparray(train, label)
     X_test, y_test = df_to_nparray(test, label)
 
