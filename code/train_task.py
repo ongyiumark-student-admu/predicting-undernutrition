@@ -141,8 +141,8 @@ results: Dict[Tuple[str, str], Union[float, Tuple[float, float, float, float]]] 
 
 
 def run_algo(train_func, best_params, over_tech, task):
-    preds = train_func(train_df, test_df, task, **best_params, oversample=over_tech)
-    kfold_metrics = train_kfold(train_df, task, 10, train_func, **best_params, oversample=over_tech)
+    preds = train_func(train_df, test_df, task, **best_params, oversample=over_tech, random_state=42)
+    kfold_metrics = train_kfold(train_df, task, 10, train_func, **best_params, oversample=over_tech, random_state=42)
     kfold_df = kfold_metrics_to_df(kfold_metrics)
 
     results = get_metrics(preds, convert_labels(test_df[task]))
@@ -150,7 +150,7 @@ def run_algo(train_func, best_params, over_tech, task):
 
 
 def hypertune(train_func, grid_params, over_tech, task, algo):
-    best_params = tune_model(train_df, task, 10, train_func, grid_params, oversample=over_tech)
+    best_params = tune_model(train_df, task, 10, train_func, grid_params, oversample=over_tech, random_state=42)
 
     with open(os.path.join(RESULTS_DIR, f'{task}_best_params.txt'), 'a') as f:
         print(over_tech, algo, best_params, sep='-', file=f)

@@ -143,7 +143,7 @@ def kfold_metrics_to_df(metrics, include_all=False, include_stdev=True):
     return dfrow
 
 
-def oversample_data(train_set, label, oversample="none"):
+def oversample_data(train_set, label, oversample="none", random_state=42):
     """Perform oversampling over the minority class using the specific technique.
 
     :param train_set: DataFrame of the training set
@@ -152,6 +152,8 @@ def oversample_data(train_set, label, oversample="none"):
     :type label: str
     :param oversample: oversampling algorithm to be applied ("none", "smote", "adasyn", "borderline")
     :type oversample: str, optional
+    :param random_state: random seed for oversampling
+    :type random_state: int, optional
     :returns: DataFrame of training set with oversampled data
     :rtype: pandas.DataFrame
     """
@@ -166,12 +168,12 @@ def oversample_data(train_set, label, oversample="none"):
 
     # Applying specified oversampling techinque
     if oversample == "smote":
-        ovs = imb.over_sampling.SMOTE()
+        ovs = imb.over_sampling.SMOTE
     elif oversample == "adasyn":
-        ovs = imb.over_sampling.ADASYN()
+        ovs = imb.over_sampling.ADASYN
     elif oversample == "borderline":
-        ovs = imb.over_sampling.BorderlineSMOTE()
-    x_train, y_train = ovs.fit_resample(x_train, y_train)
+        ovs = imb.over_sampling.BorderlineSMOTE
+    x_train, y_train = ovs(random_state=random_state).fit_resample(x_train, y_train)
     train = pd.merge(x_train, y_train, left_index=True, right_index=True)
 
     return train

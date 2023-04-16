@@ -6,11 +6,13 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from nnrf import NNRF
 from nnrf import ml
+import random
+import os
 
 from predunder.functions import (convert_labels, df_to_nparray, get_metrics, oversample_data, normalize)
 
 
-def train_random_forest(train, test, label, oversample="none", to_normalize=False, **kwargs):
+def train_random_forest(train, test, label, oversample="none", to_normalize=False, random_state=42, **kwargs):
     """Train a random forest model and make predictions.
 
     :param train: DataFrame of the training set
@@ -27,9 +29,9 @@ def train_random_forest(train, test, label, oversample="none", to_normalize=Fals
     :rtype: np.ndarray[int]
     """
     # Oversampling the training set
-    train = oversample_data(train, label, oversample)
+    train = oversample_data(train, label, oversample, random_state=random_state)
 
-    clf = RandomForestClassifier(random_state=42, **kwargs)
+    clf = RandomForestClassifier(random_state=random_state, **kwargs)
     X_train, y_train = df_to_nparray(train, label)
     X_test, y_test = df_to_nparray(test, label)
 
@@ -42,7 +44,7 @@ def train_random_forest(train, test, label, oversample="none", to_normalize=Fals
     return predicted
 
 
-def train_xgboost(train, test, label, oversample="none", to_normalize=False, **kwargs):
+def train_xgboost(train, test, label, oversample="none", to_normalize=False, random_state=42, **kwargs):
     """Train an XGBoost model and make predictions.
 
     :param train: DataFrame of the training set
@@ -59,9 +61,9 @@ def train_xgboost(train, test, label, oversample="none", to_normalize=False, **k
     :rtype: np.ndarray[int]
     """
     # Oversampling the training set
-    train = oversample_data(train, label, oversample)
+    train = oversample_data(train, label, oversample, random_state=random_state)
 
-    clf = XGBClassifier(random_state=42, objective='binary:logistic', **kwargs)
+    clf = XGBClassifier(random_state=random_state, objective='binary:logistic', **kwargs)
     X_train, y_train = df_to_nparray(train, label)
     X_test, y_test = df_to_nparray(test, label)
 
@@ -74,7 +76,7 @@ def train_xgboost(train, test, label, oversample="none", to_normalize=False, **k
     return predicted
 
 
-def train_nnrf(train, test, label, oversample="none", to_normalize=False, learning_rate=0.001, l1=0, l2=0, **kwargs):
+def train_nnrf(train, test, label, oversample="none", to_normalize=True, learning_rate=0.001, l1=0, l2=0, random_state=42, **kwargs):
     """Train an NNRF model and make predictions.
 
     :param train: DataFrame of the training set
@@ -95,12 +97,12 @@ def train_nnrf(train, test, label, oversample="none", to_normalize=False, learni
     :rtype: np.ndarray[int]
     """
     # Oversampling the training set
-    train = oversample_data(train, label, oversample)
+    train = oversample_data(train, label, oversample, random_state=random_state)
 
     o = ml.optimizer.Adam(alpha=learning_rate)
     r = ml.regularizer.L1L2(l1=l1, l2=l2)
 
-    clf = NNRF(random_state=42, loss='cross-entropy', optimizer=o, regularize=r, verbose=1, **kwargs)
+    clf = NNRF(random_state=random_state, loss='cross-entropy', optimizer=o, regularize=r, verbose=1, **kwargs)
     X_train, y_train = df_to_nparray(train, label)
     X_test, y_test = df_to_nparray(test, label)
 
@@ -113,7 +115,7 @@ def train_nnrf(train, test, label, oversample="none", to_normalize=False, learni
     return predicted
 
 
-def train_dnn(train, test, label, layers, epochs=1, oversample="none"):
+def train_dnn(train, test, label, layers, epochs=1, oversample="none", random_state=42):
     """Train a dense neural network model and make predictions.
 
     :param train: DataFrame of the training set
@@ -132,8 +134,17 @@ def train_dnn(train, test, label, layers, epochs=1, oversample="none"):
     .. todo:: Build custom evaluation functions to get the model predictions with Tensorflow.
     .. todo:: This only supports binary classification.
     """
+
+    # set seed
+    np.random.seed(random_state)
+    tf.random.set_seed(random_state)
+    random.seed(random_state)
+    os.environ['PYTHONHASHSEED'] = str(random_state)
+    os.environ['TF_DETERMINISTIC_OPS'] = '1'
+    os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
+
     # Oversampling the training set
-    train = oversample_data(train, label, oversample)
+    train = oversample_data(train, label, oversample, random_state=random_state)
 
     labels = convert_labels(train[label])
     features = train.drop(label, axis=1).to_dict(orient='list')
@@ -242,7 +253,7 @@ def train_dnn(train, test, label, layers, epochs=1, oversample="none"):
     return predicted
 
 
-def train_kfold(train_set, label, num_fold, train_func, **kwargs):
+def train_kfold(train_set, label, num_fold, train_func, random_state=42, **kwargs):
     """Validate a model with stratified k-fold cross validation.
 
     :param train_set: DataFrame of the training set
@@ -267,7 +278,7 @@ def train_kfold(train_set, label, num_fold, train_func, **kwargs):
     kappa_per_fold = []
 
     # Build K folds
-    kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=42)
+    kfold = StratifiedKFold(n_splits=num_fold, shuffle=True, random_state=random_state)
     fold_no = 1
     for train_idx, val_idx in kfold.split(train_set.drop(label, axis=1), train_set[[label]]):
         train = train_set.iloc[train_idx]
@@ -275,7 +286,7 @@ def train_kfold(train_set, label, num_fold, train_func, **kwargs):
 
         print(f"Starting fold {fold_no}...")
         # Train model
-        predicted = train_func(train, test, label, **kwargs)
+        predicted = train_func(train, test, label, random_state=random_state, **kwargs)
         accuracy, sensitivity, specificity, kappa = get_metrics(predicted, convert_labels(test[label]))
 
         acc_per_fold.append(accuracy)
