@@ -180,7 +180,7 @@ def train_dnn(train, test, label, layers, epochs=1, oversample="none", random_st
             **{float_var: tf.keras.Input(shape=(), dtype='float64') for float_var in FLOAT_VARIABLES}
         }
 
-        one_hot_outputs = {one_hot_var: tf.keras.layers.CategoryEncoding(dim, output_mode='one_hot')(inputs[one_hot_var])
+        one_hot_outputs = {one_hot_var: tf.keras.layers.Normalization(axis=None, mean=0, variance=1)(inputs[one_hot_var])
                            for one_hot_var, dim in ONE_HOT_VARIABLES}
         bool_outputs = {bool_var: tf.keras.layers.Normalization(axis=None, mean=0, variance=1)(inputs[bool_var])
                         for bool_var, dim in BOOLEAN_VARIABLES}
@@ -205,11 +205,11 @@ def train_dnn(train, test, label, layers, epochs=1, oversample="none", random_st
         inputs = {
             **{int_var: tf.keras.Input(shape=(), dtype='float64') for int_var in INTEGER_VARIABLES},
             **{bool_var: tf.keras.Input(shape=(), dtype='float64') for bool_var, dim in BOOLEAN_VARIABLES},
-            **{one_hot_var: tf.keras.Input(shape=(dim, ), dtype='float64') for one_hot_var, dim in ONE_HOT_VARIABLES},
+            **{one_hot_var: tf.keras.Input(shape=(), dtype='float64') for one_hot_var, dim in ONE_HOT_VARIABLES},
             **{float_var: tf.keras.Input(shape=(), dtype='float64') for float_var in FLOAT_VARIABLES}
         }
         outputs = tf.keras.layers.Concatenate()([
-            *[inputs[one_hot_var] for one_hot_var, dim in ONE_HOT_VARIABLES],
+            *[tf.expand_dims(inputs[one_hot_var], -1) for one_hot_var, dim in ONE_HOT_VARIABLES],
             *[tf.expand_dims(inputs[int_var], -1) for int_var in INTEGER_VARIABLES],
             *[tf.expand_dims(inputs[bool_var], -1) for bool_var, dim in BOOLEAN_VARIABLES],
             *[tf.expand_dims(inputs[float_var], -1) for float_var in FLOAT_VARIABLES]
