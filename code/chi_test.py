@@ -90,7 +90,7 @@ def chitest_manual(data, task, col):
         if a == -float('inf'):
             return f"$< {b}$"
         if b == float('inf'):
-            return f"$> {a}$"
+            return f"$> {a-1}$"
         return f"${a}-{b-1}$"
 
     indices = pd.MultiIndex.from_tuples(
