@@ -2,41 +2,9 @@ import pandas as pd
 import numpy as np
 import os
 from scipy.stats import chi2_contingency
-from typing import Dict, Union, List
 
-CLEANED_DIR = '../cleaned-data'
-TRAIN_TEST_DIR = '../train-test-data'
-LATEX_DIR = '../latex'
-task = '2aii'
-
-SHORTEN = {
-    'CHILD_SEX': 'Sex',
-    'FOOD_INSECURITY': 'FI',
-    'BEN_4PS': '4Ps',
-    'AREA_TYPE': 'Area',
-    'AGE': 'Age',
-    'IDD_SCORE': 'IDD',
-    'HDD_SCORE': 'HDD',
-    'HHID_count': 'HH Count',
-    'HH_AGE': 'HH Age',
-    'FOOD_EXPENSE_WEEKLY': 'FE',
-    'NON-FOOD_EXPENSE_WEEKLY': 'NE',
-    'FOOD_EXPENSE_WEEKLY_pc': 'FE PC',
-    'NON-FOOD_EXPENSE_WEEKLY_pc': 'NE PC'
-}
-
-BINS: Dict[str, List[float]] = {
-    'AGE': [-float('inf'), 3, 6, 10, 13, 19, float('inf')],  # a[i] <= x < a[i+1]
-    'IDD_SCORE': [0, 3, 7, 11, 16+1],
-    'HDD_SCORE': [0, 3, 7, 11, 16+1]
-}
-
-CAT_IDX: Dict[str, List[Union[float, str]]] = {
-    'CHILD_SEX': ['Male', 'Female'],
-    'FOOD_INSECURITY': [np.nan, 'None', 'Mild', 'Moderate', 'Severe'],
-    'BEN_4PS': ['No', 'Yes'],
-    'AREA_TYPE': ['Rural', 'Urban']
-}
+from global_variables import (CLEANED_DIR, TRAIN_TEST_DIR, LATEX_DIR,
+                              CAT_IDX, SHORTEN, BINS)
 
 
 def latex_friendly(s):
@@ -260,4 +228,4 @@ if __name__ == '__main__':
 
         with open(os.path.join(LATEX_DIR, 'chitest_tables.tex'), 'a') as f:
             print(df_to_latex(chitest_df, caption, f"tab:chitest_{task}", col_format), file=f)
-        print("Done.")
+        print("Done.", end='\n\n')

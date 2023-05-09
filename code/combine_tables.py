@@ -1,8 +1,7 @@
 import os
 import pandas as pd
 
-CLEANED_DIR = '../cleaned-data'
-LATEX_DIR = '../latex'
+from global_variables import CLEANED_DIR, LATEX_DIR
 
 
 if __name__ == '__main__':

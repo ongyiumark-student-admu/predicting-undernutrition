@@ -2,7 +2,7 @@ import pandas as pd
 import sys
 import os
 
-CLEANED_DIR = '../cleaned-data'
+from global_variables import CLEANED_DIR
 
 
 if __name__ == '__main__':
@@ -62,7 +62,7 @@ if __name__ == '__main__':
                     new_row['idx'] = row['idx']
                     if lb is None:
                         sex, age = row['RENI_IDX'].split('_')
-                        print(f"Ignoring {age} year old, {row['idx']}.", file=sys.stderr)
+                        print(f"Ignoring {age} year-old, {row['idx']}, due to lack of RENI standard.", file=sys.stderr)
                         continue
 
                     if len(labels) == 3:
@@ -89,6 +89,6 @@ if __name__ == '__main__':
             })
 
             final_tags = final_tags.merge(final_task_tags, how='left', on='idx')
-            print(f"Completed {task}.")
+            print(f"Completed {task}.", end='\n\n')
 
     final_tags.to_csv(os.path.join(CLEANED_DIR, 'final_tags.csv'), index=False)

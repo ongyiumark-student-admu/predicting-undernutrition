@@ -1,50 +1,11 @@
 import pandas as pd
 import numpy as np
 import os
-from typing import Dict, Union, List
 
-URBAN_SHEET = "Valenzuela_20201016_Feb"
-RURAL_SHEET = "ComVal_20200118_Oct"
-DATA_DIR = "../data/Data.xlsx"
-CLEANED_DIR = "../cleaned-data"
-
-INDIVIDUAL_VARIABLES = ['CHILD_SEX', 'IDD_SCORE', 'AGE']
-CAT_IDX: Dict[str, List[Union[float, str]]] = {
-    'CHILD_SEX': ['Male', 'Female'],
-    'FOOD_INSECURITY': [np.nan, 'None', 'Mild', 'Moderate', 'Severe'],
-    'BEN_4PS': ['No', 'Yes'],
-    'AREA_TYPE': ['RURAL', 'URBAN']
-}
-TARGET_VARIABLES = [
-    'ENERGY_%_ADEQ_ALL',
-    'IRON_%_ADEQ_ALL',
-    'VIT_A_%_ADEQ_ALL',
-    'PROTEIN_%_ADEQ_ALL',
-    'CARBS_PERCENT_AVE_ALL',
-    'PROT_PERCENT_AVE_ALL',
-    'FAT_PERCENT_AVE_ALL',
-    'PROTEIN_g_AVE_ALL',
-    'CALCIUM_mg_AVE_ALL',
-    'PHOSPHORUS_mg_AVE_ALL',
-    'IRON_mg_AVE_ALL',
-    'VIT_A_ug_RE_AVE_ALL',
-    'THIAMIN_mg_AVE_ALL',
-    'RIBOFLAVIN_mg_AVE_ALL',
-    'NIACIN_mg_NE_AVE_ALL',
-    'VIT_C_mg_AVE_ALL'
-]
-INTEGER_VARIABLES = [
-    'IDD_SCORE',
-    'AGE',
-    'HHID_count',
-    'HDD_SCORE',
-    'FOOD_INSECURITY'
-]
-BOOLEAN_VARIABLES = [
-    'CHILD_SEX',
-    'BEN_4PS',
-    'AREA_TYPE'
-]
+from global_variables import (URBAN_SHEET, RURAL_SHEET, DATA_FILE, CLEANED_DIR,
+                              INDIVIDUAL_VARIABLES, CAT_IDX, TARGET_VARIABLES,
+                              INTEGER_VARIABLES, BOOLEAN_VARIABLES
+                              )
 
 
 def clean_data(data, children_data, idx_str):
@@ -126,22 +87,22 @@ def clean_data(data, children_data, idx_str):
 
 if __name__ == '__main__':
     print("Reading raw data...")
-    data_rural = pd.read_excel(DATA_DIR, sheet_name=RURAL_SHEET)
-    data_urban = pd.read_excel(DATA_DIR, sheet_name=URBAN_SHEET)
-    print("Reading raw data completed.")
+    data_rural = pd.read_excel(DATA_FILE, sheet_name=RURAL_SHEET)
+    data_urban = pd.read_excel(DATA_FILE, sheet_name=URBAN_SHEET)
+    print("Reading raw data completed.", end='\n\n')
 
     print("Gathering child data...")
     children_urban = data_urban.query("FR_Child == 1")
     children_rural = data_rural.query("FR_Child == 1")
-    print("Gathering child data completed.")
+    print("Gathering child data completed.", end='\n\n')
 
     print("Cleaning urban data...")
     X_urban, y_urban = clean_data(data_urban, children_urban, "VZ")
-    print("Cleaning urban data completed.")
+    print("Cleaning urban data completed.", end='\n\n')
 
     print("Cleaning rural data...")
     X_rural, y_rural = clean_data(data_rural, children_rural, "CV")
-    print("Cleaning rural data completed.")
+    print("Cleaning rural data completed.", end='\n\n')
 
     cleaned_X = pd.concat([X_rural, X_urban])
     cleaned_y = pd.concat([y_rural, y_urban])
@@ -149,4 +110,4 @@ if __name__ == '__main__':
     print("Saving cleaned data...")
     cleaned_X.to_csv(os.path.join(CLEANED_DIR, 'cleaned_X.csv'), index=False)
     cleaned_y.to_csv(os.path.join(CLEANED_DIR, 'cleaned_y.csv'), index=False)
-    print("Saved.")
+    print("Saved.", end='\n\n')
