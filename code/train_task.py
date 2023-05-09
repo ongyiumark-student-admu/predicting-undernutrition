@@ -2,16 +2,13 @@ from scipy.stats import t
 import pandas as pd
 import numpy as np
 import os
-import sys
 from predunder.hypertuning import tune_model
 from predunder.training import train_random_forest, train_xgboost, train_dnn, train_nnrf, train_kfold
 from predunder.functions import get_metrics, convert_labels, kfold_metrics_to_df
 from typing import Dict, Union, Any, Tuple
+import argparse
 
-DATA_DIR = '../train-test-data'
-OVERSAMPLING = ['none', 'smote', 'borderline', 'adasyn']
-LATEX_DIR = '../latex'
-RESULTS_DIR = '../results'
+from global_variables import (TRAIN_TEST_DIR, LATEX_DIR, RESULTS_DIR, OVERSAMPLING)
 
 
 def get_95_CI(samp_mean, samp_sd, N):
@@ -189,15 +186,32 @@ def read_bests(task):
     return res
 
 
+def initialize_parser():
+    parser = argparse.ArgumentParser(
+        description="Tune hyperparameters and evaluate on the testing group.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    parser.add_argument("-t", "--task", help="classification task code",
+                        choices=['1b', '2ai', '2aii', '2aiii', '2biv1', '2biv2', '2biv3', '2biv4'],
+                        default='1b'
+                        )
+    parser.add_argument("-r", "--reset", action="store_true", help="reset saved parameters")
+    args = parser.parse_args()
+    config = vars(args)
+
+    return config['task'], config['reset']
+
+
 if __name__ == '__main__':
-    TASK = sys.argv[1]
-    train_df = pd.read_csv(os.path.join(DATA_DIR, f"{TASK}_train.csv"), index_col=0)
-    test_df = pd.read_csv(os.path.join(DATA_DIR, f"{TASK}_test.csv"), index_col=0)
+    TASK, to_reset = initialize_parser()
+    train_df = pd.read_csv(os.path.join(TRAIN_TEST_DIR, f"{TASK}_train.csv"), index_col=0)
+    test_df = pd.read_csv(os.path.join(TRAIN_TEST_DIR, f"{TASK}_test.csv"), index_col=0)
 
     global best_saved
     best_saved = read_bests(TASK)
 
-    if len(sys.argv) >= 3 and int(sys.argv[2]):
+    if to_reset:
         with open(os.path.join(RESULTS_DIR, f'{TASK}_best_params.txt'), 'w') as f:
             print('', end='', file=f)
 

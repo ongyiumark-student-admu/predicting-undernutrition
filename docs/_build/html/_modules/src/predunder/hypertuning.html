@@ -66,12 +66,48 @@
 <span></span><span class="c1"># Importing libraries</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">ParameterGrid</span>
 <span class="kn">from</span> <span class="nn">predunder.functions</span> <span class="kn">import</span> <span class="n">kfold_metrics_to_df</span>
 <span class="kn">from</span> <span class="nn">predunder.training</span> <span class="kn">import</span> <span class="n">train_dnn</span><span class="p">,</span> <span class="n">train_kfold</span>
 
 
+<div class="viewcode-block" id="tune_model"><a class="viewcode-back" href="../../../predunder.html#src.predunder.hypertuning.tune_model">[docs]</a><span class="k">def</span> <span class="nf">tune_model</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">train_func</span><span class="p">,</span> <span class="n">param_grid</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs grid search cross validation on Cohen&#39;s Kappa</span>
+
+<span class="sd">    :param train: DataFrame of the training set</span>
+<span class="sd">    :type train: pandas.DataFrame</span>
+<span class="sd">    :param label: name of the target column for supervised learning</span>
+<span class="sd">    :type label: str</span>
+<span class="sd">    :param fold: number of folds for k-fold cross-validation</span>
+<span class="sd">    :type fold: int</span>
+<span class="sd">    :param train_func: training function of the model being validated</span>
+<span class="sd">    :type train_func: Callable[..., (float,float,float)]</span>
+<span class="sd">    :param param_grid: grid of parameters to hypertune with</span>
+<span class="sd">    :type param_grid: dict[str, list]</span>
+<span class="sd">    :returns: best parameters</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">best_score</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="n">all_params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ParameterGrid</span><span class="p">(</span><span class="n">param_grid</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">params</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_params</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting parameters </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">all_params</span><span class="p">)</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">train_kfold</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">train_func</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;KAPPA&#39;</span><span class="p">][</span><span class="s1">&#39;MEAN&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">best_score</span> <span class="o">&lt;=</span> <span class="n">score</span><span class="p">:</span>
+            <span class="n">best_score</span> <span class="o">=</span> <span class="n">score</span>
+            <span class="n">best_params</span> <span class="o">=</span> <span class="n">params</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Completed parameters </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">best_params</span></div>
+
+
 <div class="viewcode-block" id="tune_dnn"><a class="viewcode-back" href="../../../predunder.html#src.predunder.hypertuning.tune_dnn">[docs]</a><span class="k">def</span> <span class="nf">tune_dnn</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">max_nodes</span><span class="p">,</span> <span class="n">oversample</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Brute force number of nodes in a neural network up to three hidden layers.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Brute force number of nodes in a neural network up to three hidden layers.</span>
 
 <span class="sd">    :param train: DataFrame of the training set</span>
 <span class="sd">    :type train: pandas.DataFrame</span>
@@ -87,14 +123,12 @@
 <span class="sd">    :rtype: pandas.DataFrame</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
-    <span class="n">features</span> <span class="o">=</span> <span class="n">train</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">label</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_nodes</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">()</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="n">metrics</span> <span class="o">=</span> <span class="n">train_kfold</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">train_dnn</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">oversample</span><span class="o">=</span><span class="n">oversample</span><span class="p">)</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">train_kfold</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">train_dnn</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">oversample</span><span class="o">=</span><span class="n">oversample</span><span class="p">)</span>
         <span class="n">rowdf</span> <span class="o">=</span> <span class="n">kfold_metrics_to_df</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
         <span class="n">rowdf</span><span class="p">[</span><span class="s1">&#39;LAYERS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span><span class="p">]]</span>
         <span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">results</span><span class="p">,</span> <span class="n">rowdf</span><span class="p">])</span>
@@ -104,7 +138,7 @@
             <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
                 <span class="nb">print</span><span class="p">()</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span>
-            <span class="n">metrics</span> <span class="o">=</span> <span class="n">train_kfold</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">train_dnn</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">oversample</span><span class="o">=</span><span class="n">oversample</span><span class="p">)</span>
+            <span class="n">metrics</span> <span class="o">=</span> <span class="n">train_kfold</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">folds</span><span class="p">,</span> <span class="n">train_dnn</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">oversample</span><span class="o">=</span><span class="n">oversample</span><span class="p">)</span>
             <span class="n">rowdf</span> <span class="o">=</span> <span class="n">kfold_metrics_to_df</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
             <span class="n">rowdf</span><span class="p">[</span><span class="s1">&#39;LAYERS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]]</span>
             <span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">results</span><span class="p">,</span> <span class="n">rowdf</span><span class="p">])</span>
