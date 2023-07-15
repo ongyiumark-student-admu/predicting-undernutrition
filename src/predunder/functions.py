@@ -35,9 +35,9 @@ def normalize(train, test):
     test = test.astype(float)
     tr_mean = train.mean(axis=0)
     tr_std = train.std(axis=0)
-    train = (train - tr_mean) / tr_std
-    test = (test - tr_mean) / tr_std
-    return train, test
+    ntrain = (train - tr_mean) / tr_std
+    ntest = (test - tr_mean) / tr_std
+    return ntrain, ntest
 
 
 def df_to_dataset(dataframe, label, shuffle=True, batch_size=8):
@@ -157,6 +157,8 @@ def oversample_data(train_set, label, oversample="none", random_state=42):
     :returns: DataFrame of training set with oversampled data
     :rtype: pandas.DataFrame
     """
+    if oversample not in ["none", "smote", "adasyn", "borderline"]:
+        raise ValueError(f"{oversample} is not a valid oversampling algorithm.")
 
     # Returns origin train set if no oversampling is specified
     if oversample == "none":
